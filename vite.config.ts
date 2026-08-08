@@ -8,7 +8,7 @@ export default defineConfig({
     strictPort: true,
   },
   // A forensics tool must not reach the network at runtime. Everything the UI
-  // needs — fonts included — is bundled.
+  // needs, fonts included, is bundled.
   build: {
     assetsInlineLimit: 0,
     target: "es2022",
