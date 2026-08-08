@@ -186,6 +186,8 @@ reasoning is in [analysis-workflows.md](analysis-workflows.md).
 
 **Does not touch** `src/`, `daemon/`
 
+Windows only for this pass. See section 8a.
+
 Build:
 
 - Tauri window, native open dialog, minimum window size 1280 by 720.
@@ -260,7 +262,8 @@ Build:
 
 - CI: fast job on every push (typecheck, unit, conformance, Playwright against
   the mock, house style). Slow job nightly and on demand (real image, oracle
-  comparison, performance).
+  comparison, performance). The daemon and its tests run on Linux in CI; the
+  packaged application is built and tested on Windows.
 - The performance harness described in section 7.
 
 **Acceptance**
@@ -419,15 +422,36 @@ packaging path early, on Windows first, rather than leaving it to the end.
 reach the network silently. Make it explicit, visible, and refusable, and record
 in the case file whether symbols came from the bundle or the internet.
 
-**Open questions for the user, not for an agent to decide:**
+## 8a. Decisions already taken
 
-1. Should `main` be pushed and made the GitHub default branch? Only `dev` is on
-   the remote, so the default currently points at `dev`.
-2. Should `README.md`, `CONTRIBUTING.md` and `CLAUDE.md` become English? Code,
-   comments, UI strings and `docs/` are English already.
-3. Windows only for this pass, or Linux and macOS too? It changes the WebView
-   matrix, since Tauri uses WebView2 on Windows and WKWebView on macOS, and the
-   Playwright projects should match.
+Recorded here so no agent reopens them.
+
+**Windows only for this pass.** The reference image is a Windows 10 build, and
+Tauri uses WebView2 on Windows, which is Chromium, so the Playwright checks
+already run against something close to the production runtime. Adding macOS
+would bring a WKWebView test matrix and a second packaging path, which is the
+schedule risk named above. Prove the daemon and the packaging on one platform
+first.
+
+Practical consequences for agents:
+
+- Agent B targets WebView2 and a Windows installer. Do not spend time on
+  cross-platform packaging yet, but do not hard-code Windows paths either:
+  keep path handling and process spawning behind an abstraction so the second
+  platform is a port, not a rewrite.
+- Agent A must still work on Linux, because CI runs there and Volatility itself
+  is cross-platform. The daemon has no reason to be Windows-specific.
+- Agent D configures Playwright with the `chromium` project only. Add `webkit`
+  when macOS support starts.
+
+**Repository language is English.** Code, comments, interface strings,
+documentation, commit messages, and now `README.md`, `CONTRIBUTING.md` and
+`CLAUDE.md` as well. A public forensics tool has an international audience, and
+a repository whose entry documents are in one language and whose code is in
+another creates friction for both.
+
+**`main` is the default branch.** Work flows `dev` into `main` into `release`,
+as `CONTRIBUTING.md` describes. Pull requests target `dev`.
 
 ## 9. Definition of done for this pass
 

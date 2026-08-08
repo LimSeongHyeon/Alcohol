@@ -1,101 +1,179 @@
-# Alcohol 프로젝트 지침
+# Alcohol: project instructions
 
-Volatility 3 기반 데스크톱 메모리 포렌식 GUI. Tauri (Rust) + React/TypeScript + Python 사이드카 데몬.
+A desktop memory forensics interface for Volatility 3. Tauri (Rust) plus React
+and TypeScript, with a Python sidecar daemon.
 
-## 라이선스: 협상 불가
+Windows is the only target platform for the current pass. Other platforms come
+later, once the daemon and the packaging path are proven.
 
-이 저장소는 **Volatility Software License v1.0**입니다. MIT/Apache/BSD/GPL로 바꿀 수 없어요.
+## Language
 
-Volatility 3의 VSL `Copyleft` 조항이 "Additions"에 이걸 포함합니다:
+Everything inside the repository is written in English: code, identifiers,
+comments, interface strings, documentation and commit messages.
 
-> any software designed to execute the software and parse its results, such as a wrapper written for the software
+## House style
 
-subprocess로 호출하고 출력만 파싱해도 해당합니다. 링크 방식과 무관해요. 예외인 "범용 실행 셸/메뉴"는 Volatility 전용 GUI에 적용되지 않습니다.
+**Never use an em dash (`U+2014`) or an en dash (`U+2013`).** Anywhere. Rewrite
+the sentence instead of substituting a hyphen: a comma, a colon, a full stop or
+parentheses will carry the same structure. For an absent value in a table, use a
+plain hyphen. For a numeric range, write "0 to 1".
 
-따라서:
+`tests/house-style.spec.ts` enforces this across every tracked file. `LICENSE`
+is exempt because it is upstream text that must stay byte-identical.
 
-- `LICENSE`는 VSL v1.0 전문이며 **한 글자도 수정하지 않습니다.** 우리 저작권 표시는 `NOTICE`에 별도로 둡니다.
-- 다른 라이선스의 코드를 들여오지 않습니다. 의존성 추가 시 라이선스를 먼저 확인하세요.
-- LGPL/GPL 기반 프로젝트와 같은 저장소·같은 배포물로 묶지 않습니다.
-- Volatility 2(GPLv2, Python 2 EOL)는 신규 의존성으로 채택하지 않습니다.
-- **패키지명·바이너리명·로고·도메인에 "Volatility"를 쓰지 않습니다.** VSL은 상표권을 주지 않습니다. 문서에서 상위 소프트웨어를 지칭할 때만 씁니다.
-- 모든 배포물에 `LICENSE`와 `NOTICE`를 동봉합니다.
-- 위반 시 라이선스가 즉시 소멸합니다. 유예 없음.
+## Licence: not negotiable
 
-GitHub이 라이선스를 `unknown`으로 표시하는 건 정상입니다 (OSI 미승인). 고치려고 다른 라이선스로 바꾸지 마세요.
+This repository is under the **Volatility Software License v1.0**. It cannot be
+changed to MIT, Apache, BSD or GPL.
 
-## 공개 저장소의 커밋 위생
+The `Copyleft` section of Volatility 3's VSL includes this in "Additions":
 
-이건 포렌식 도구고 저장소는 공개입니다. **메모리 이미지나 분석 산출물이 커밋되면 사고입니다.**
+> any software designed to execute the software and parse its results, such as a
+> wrapper written for the software
 
-- 커밋 전에 `git status`로 신규 파일을 확인하세요. 스테이징 전에 무엇이 들어가는지 보세요.
-- `.gitignore`가 `*.raw`, `*.mem`, `*.vmem`, `*.dmp`, `*.E01`, `evidence/`, `samples/`, `dumps/`, `output/` 등을 막습니다. 안전망이지 대책이 아닙니다.
-- `git add -A`나 `git add .`는 피하세요. 경로를 명시해서 스테이징하세요.
-- 이슈나 커밋 메시지에 실제 분석 출력을 붙일 때는 사용자명, 경로, IP를 가리세요.
-- 테스트 픽스처가 이미지를 필요로 하면 환경 변수로 경로를 받으세요.
+Calling it through a subprocess and parsing the output still counts. The linking
+strategy is irrelevant. The carve-out for a general execution shell or menu does
+not apply to a Volatility-specific interface.
 
-## 브랜치 전략
+Therefore:
 
-```
-dev  ──▶  main  ──▶  release
-```
+- `LICENSE` is the full VSL v1.0 text and **is never edited, not by one
+  character.** Our own copyright notice lives separately in `NOTICE`.
+- Do not bring in code under another licence. Check the licence before adding
+  any dependency.
+- Do not combine this repository or its artifacts with an LGPL or GPL project.
+- Volatility 2 (GPLv2, Python 2, end of life) is not adopted as a dependency.
+- **"Volatility" does not appear in package names, binary names, logos or
+  domains.** VSL grants no trademark rights. Use the name only in documentation,
+  to refer to the upstream software.
+- Every artifact ships `LICENSE` and `NOTICE`.
+- Violation terminates the licence immediately. There is no cure period.
 
-`dev`가 기본 작업 브랜치입니다. 기능 브랜치는 `dev`에서 따고 `dev`로 머지합니다. `main`과 `release`에는 직접 커밋하지 않습니다.
+GitHub showing the licence as `unknown` is expected, because VSL is not
+OSI-approved. Do not "fix" that by switching licences.
 
-커밋 메시지는 Conventional Commits.
+## Public repository: commit hygiene
 
-## 아키텍처: 성능이 설계를 결정합니다
+This is a forensics tool and the repository is public. **A memory image or an
+analysis artifact reaching a commit is an incident.**
 
-Volatility 3의 실제 비용 구조를 소스에서 확인한 결과입니다.
+- Check `git status` for new files before committing. Look at what is being
+  staged.
+- `.gitignore` blocks `*.raw`, `*.mem`, `*.vmem`, `*.dmp`, `*.E01`, `*.alcohol`,
+  and `evidence/`, `samples/`, `dumps/`, `output/`. It is a safety net, not a
+  plan.
+- Avoid `git add -A` and `git add .`. Stage explicit paths.
+- Redact user names, paths and addresses before pasting real analysis output
+  into an issue or a commit message.
+- If a test fixture needs an image, take the path from an environment variable.
 
-**병렬성은 기대하지 마세요.** `constants.PARALLELISM`의 기본값은 `Off`이고, 켜도 `TranslationLayerInterface.scan()` 내부만 병렬화됩니다. 스캐너가 `thread_safe = True`여야 하는데 기본값은 `False`. 결과 후처리와 주소 목록 생성은 직렬입니다. 재단 문서도 이득이 크지 않다고 명시합니다.
+## Architecture: performance decides the design
 
-**진짜 비용은 초기화입니다.** 프레임워크 기동 실측 (이 머신, 197개 플러그인):
+Confirmed by reading the Volatility 3 source, not assumed.
 
-| | import | discovery | 합계 |
-|---|---|---|---|
-| 콜드 (`.pyc` 없음) | 0.34s | 1.34s | 1.68s |
-| 웜 | 0.27s | 0.44s | 0.71s |
+**Do not expect parallelism.** `constants.PARALLELISM` defaults to `Off`, and
+even enabled it only covers the body of `TranslationLayerInterface.scan()`. The
+scanner must set `thread_safe = True`, and the interface default is `False`.
+Result post-processing and scan-address generation are serial. The foundation's
+own documentation says the gain is not significant.
 
-여기에 Python 인터프리터 기동이 더 붙습니다. 프로세스를 새로 띄울 때마다 내는 고정 비용이 0.7초 이상이라는 뜻이에요.
+**The real cost is initialisation.** Framework startup measured on this machine,
+197 plugins, no image loaded:
 
-그리고 이건 **분석 이미지 없이 잰 값입니다.** 실제 이미지를 열면 automagic(DTB·커널 배너 스캔)과 심볼 테이블 로딩이 붙는데, 이쪽이 훨씬 무겁습니다. 아직 실측하지 않았습니다. 이미지가 생기면 재고 이 표를 갱신하세요. 추정치를 사실처럼 적지 마세요.
+| | import | discovery | total |
+| --- | --- | --- | --- |
+| cold (no `.pyc`) | 0.34s | 1.34s | 1.68s |
+| warm | 0.27s | 0.44s | 0.71s |
 
-그래서 지켜야 할 원칙:
+Python interpreter startup sits on top of that. It is a fixed cost of at least
+0.7 seconds every time a process is spawned.
 
-1. **Context를 재사용합니다.** Python 데몬은 장기 실행이고, 이미지당 `Context`와 레이어 스택을 한 번만 만듭니다. `intel.py:184`의 `_translate_entry`가 `lru_cache(maxsize=1024)`인데 이게 레이어 인스턴스에 붙어 있어요. Context를 버리면 캐시도 날아갑니다. **플러그인마다 `vol.py`를 새로 띄우는 설계는 금지입니다.**
-2. **동시성은 플러그인 단위로.** 한 플러그인 내부를 쪼개지 말고, 서로 다른 플러그인을 각자 워커 프로세스에서 돌리세요. 하나의 Context를 여러 스레드가 공유하면 안 됩니다. 레이어 객체와 lru_cache가 스레드 안전하다고 문서화돼 있지 않습니다.
-3. **결과는 스트리밍.** 플러그인은 제너레이터입니다. 완료를 기다리지 말고 행이 도착하는 대로 UI에 흘리세요.
-4. **심볼 캐시를 보존.** `~/.cache/volatility3`의 sqlite 캐시와 ISF 파일은 재사용됩니다. 데몬 재시작이 이걸 무효화하지 않게 하세요.
+**These numbers were measured without an image.** Opening a real one adds
+automagic (the DTB and kernel banner scan) and symbol table loading, and those
+are heavier. They have not been measured yet. Measure them when an image is
+available and update this table. Do not write estimates as if they were
+measurements.
 
-## 플러그인 가용성: 조용한 실패를 허용하지 마세요
+The rules that follow:
 
-`framework.import_files(plugins, True)`는 임포트에 실패한 플러그인을 **조용히 건너뜁니다.** 실측한 결과가 이렇습니다.
+1. **Reuse the Context.** The Python daemon is long-running and builds one
+   `Context` and layer stack per image. `_translate_entry` in `intel.py:184` is
+   an `lru_cache(maxsize=1024)` bound to the layer instance. Discard the Context
+   and the cache goes with it. **Spawning `vol.py` per plugin is forbidden.**
+2. **Concurrency belongs between plugins.** Do not split one plugin's work.
+   Run different plugins in separate worker processes. Never share one Context
+   across threads: neither the layer objects nor their caches are documented as
+   thread-safe.
+3. **Stream results.** Plugins are generators. Send rows to the interface as
+   they arrive rather than waiting for completion.
+4. **Preserve the symbol cache.** The sqlite cache and ISF files under
+   `~/.cache/volatility3` are reused. Do not let a daemon restart invalidate
+   them.
 
-| 설치된 패키지 | 로드되는 플러그인 |
-|---|---|
-| 없음 | 166 |
+## Plugin availability: silent failure is not allowed
+
+`framework.import_files(plugins, True)` **silently skips** plugins that fail to
+import. Measured:
+
+| Installed | Plugins loaded |
+| --- | --- |
+| nothing | 166 |
 | `pefile` | 191 |
 | `+ yara-python` | 191 |
 | `+ pycryptodome` | **197** |
 
-`pefile` 하나가 없으면 `windows.netscan`이 사라집니다. 가장 많이 쓰이는 플러그인 중 하나예요. `yara-python`이 없으면 `yarascan`과 `mftscan`이, `pycryptodome`이 없으면 `hashdump`·`lsadump`·`cachedump`가 사라집니다.
+Missing `pefile` alone removes `windows.netscan`, one of the most used plugins
+there is. Without `yara-python` there is no `yarascan` or `mftscan`. Without
+`pycryptodome` there is no `hashdump`, `lsadump` or `cachedump`.
 
-포렌식 도구에서 이건 심각합니다. 분석가가 네트워크 연결을 확인하려는데 플러그인 목록에 `netscan`이 아예 없으면, 도구가 고장 난 게 아니라 **"연결이 없다"고 오독할 수 있습니다.**
+In a forensics tool this is serious. An analyst looking for network connections
+who does not find `netscan` in the list may read that as **"there were no
+connections"** rather than as a broken installation.
 
-그래서:
+So:
 
-- `pefile`, `yara-python`, `pycryptodome`는 **선택이 아니라 필수 의존성**입니다. 데몬 requirements에 고정하세요.
-- 데몬은 기동 시 `import_files`의 실패 목록을 반드시 수집해서 UI로 올립니다.
-- UI는 사용 불가 플러그인을 **숨기지 말고** 비활성 상태로 이유와 함께 보여줍니다. 목록에서 사라지는 건 금지입니다.
+- `pefile`, `yara-python` and `pycryptodome` are **required dependencies, not
+  optional extras.** Pin them in the daemon's requirements.
+- The daemon collects the failure list from `import_files` at startup and
+  forwards it to the interface.
+- The interface shows unavailable plugins **disabled, with the reason, never
+  hidden.** Disappearing from the list is forbidden.
 
-## GUI 품질
+## Interface quality
 
-기능만큼 GUI 완성도가 중요한 프로젝트입니다. UI 작업에는 `design` 플러그인 스킬을, 사용자 문구에는 `tone` 스킬을 씁니다.
+Interface quality matters as much as function here. Use the `design` plugin
+skills for UI work and the `tone` skill for user-facing text.
 
-포렌식 도구 특유의 요구사항:
+What a forensics tool specifically demands:
 
-- 데이터 밀도가 높습니다. 수만 행 테이블은 가상 스크롤 전제로 설계하세요.
-- 분석은 오래 걸립니다. 진행 상태와 취소를 1급 시민으로 다루세요. 스피너만 돌리지 마세요.
-- 분석가는 결과를 비교합니다. 여러 플러그인 결과를 나란히 볼 수 있어야 합니다.
-- 오래 봅니다. 다크 테마가 기본이고, 대비와 타이포그래피에 신경 쓰세요.
+- Data density is high. Design tables of tens of thousands of rows around
+  virtual scrolling from the start.
+- Analysis takes a long time. Progress and cancellation are first-class, not a
+  spinner.
+- Analysts compare results. Several plugin outputs need to be viewable side by
+  side.
+- Analysts look at this for hours. Dark theme by default, and every text tone
+  must clear WCAG AA. `tests/house-style.spec.ts` and the contrast checks in
+  `tests/workspace.spec.ts` hold the line.
+
+## Colour has one job
+
+The interface chrome is achromatic. Selection, hover and focus are expressed in
+lightness alone. Saturation is reserved for meaning, in two separate channels:
+
+- A **verdict** is the tool's own observation. Small, solid, saturated: a stripe
+  at the row's leading edge.
+- A **highlight** is applied by the analyst. Large, translucent, desaturated:
+  the row fill.
+
+A row can carry both and still be read. Do not spend colour on anything else.
+
+## Where to look
+
+| Document | Contents |
+| --- | --- |
+| `docs/implementation-plan.md` | The current work plan, agent assignments, milestones, tests |
+| `docs/architecture.md` | Process model, protocol, why not `vol.py` per plugin |
+| `docs/analysis-workflows.md` | Research behind the interface's structure |
+| `docs/case-file.md` | The `.alcohol` container format |
+| `docs/roadmap.md` | Milestones beyond the current pass |
