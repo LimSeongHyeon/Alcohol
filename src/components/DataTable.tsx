@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Verdict } from "../types";
 
@@ -42,6 +42,42 @@ export function DataTable<T>({
 
   const style = (c: Column<T>) => (c.width === 0 ? { flex: 1, minWidth: 0 } : { width: c.width });
 
+  const selectedIndex = selectedKey === null ? -1 : rows.findIndex((r) => rowKey(r) === selectedKey);
+
+  // Key events can arrive faster than React re-renders, and several will then
+  // share one render's `selectedIndex` — hold an arrow key and the extra
+  // presses vanish. The anchor advances synchronously so each event moves from
+  // where the last one landed, and resyncs whenever selection changes elsewhere.
+  const anchor = useRef(selectedIndex);
+  useEffect(() => {
+    anchor.current = selectedIndex;
+  }, [selectedIndex]);
+
+  /** Analysts drive dense tables from the keyboard. Arrow keys move the
+   *  selection and keep it in view; the mouse is the fallback, not the path. */
+  function onKeyDown(e: KeyboardEvent) {
+    const page = Math.max(1, Math.floor((scrollEl?.clientHeight ?? ROW_H * 10) / ROW_H) - 1);
+    const step =
+      e.key === "ArrowDown" ? 1
+      : e.key === "ArrowUp" ? -1
+      : e.key === "PageDown" ? page
+      : e.key === "PageUp" ? -page
+      : 0;
+
+    let next: number | null = null;
+    if (step !== 0) next = Math.min(rows.length - 1, Math.max(0, (anchor.current < 0 ? 0 : anchor.current) + step));
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = rows.length - 1;
+
+    if (next === null || rows.length === 0) return;
+    e.preventDefault();
+    const row = rows[next];
+    if (!row) return;
+    anchor.current = next;
+    onSelect(row);
+    virtualizer.scrollToIndex(next, { align: "auto" });
+  }
+
   return (
     <div className="table">
       <div className="thead" role="row">
@@ -53,7 +89,14 @@ export function DataTable<T>({
         ))}
       </div>
 
-      <div className="tbody" ref={setScrollEl} tabIndex={0}>
+      <div
+        className="tbody"
+        ref={setScrollEl}
+        tabIndex={0}
+        role="grid"
+        aria-rowcount={rows.length}
+        onKeyDown={onKeyDown}
+      >
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = rows[v.index];
@@ -67,6 +110,8 @@ export function DataTable<T>({
                 style={{ transform: `translateY(${v.start}px)` }}
                 onClick={() => onSelect(row)}
                 role="row"
+                aria-rowindex={v.index + 1}
+                aria-selected={selectedKey === key}
               >
                 <span className={`verdict verdict-${verdict}`} aria-label={verdict === "clean" ? undefined : verdict} />
                 {columns.map((c) => (

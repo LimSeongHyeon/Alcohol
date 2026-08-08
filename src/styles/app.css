@@ -164,8 +164,8 @@
   justify-content: space-between;
   padding-top: 2px;
   font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--ink-500);
+  font-size: 10px;
+  color: var(--ink-400);
   letter-spacing: 0;
 }
 
@@ -179,7 +179,7 @@
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 /* ------------------------------------------------------------------ nav */
@@ -209,12 +209,12 @@
 }
 
 .nav-input::placeholder {
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 .nav-input:focus {
   outline: none;
-  border-color: var(--ink-500);
+  border-color: var(--ink-400);
 }
 
 .nav-scroll {
@@ -238,7 +238,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   font-weight: 500;
-  color: var(--ink-500);
+  color: var(--ink-400);
   width: 12px;
   flex: none;
 }
@@ -256,7 +256,7 @@
   padding: 0 var(--s-5) var(--s-3) 28px;
   font-size: var(--text-micro);
   line-height: 1.4;
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 .nav-item {
@@ -283,7 +283,7 @@
 }
 
 .nav-item:disabled {
-  color: var(--ink-500);
+  color: var(--ink-400);
   cursor: not-allowed;
 }
 
@@ -306,7 +306,7 @@
 .nav-count {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 .nav-lock {
@@ -314,7 +314,7 @@
   font-family: var(--font-condensed);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-500);
+  color: var(--ink-400);
   border: 1px solid var(--ink-700);
   border-radius: 2px;
   padding: 0 3px;
@@ -386,7 +386,7 @@
 .tab-count {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 .tab-alerts {
@@ -414,6 +414,15 @@
   }
 }
 
+/* The spinner communicates "still running". Without motion it still has to say
+ * that, so it holds at full opacity rather than disappearing. */
+@media (prefers-reduced-motion: reduce) {
+  .tab-spinner {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -435,7 +444,7 @@
 
 .toolbar-filter:focus {
   outline: none;
-  border-color: var(--ink-500);
+  border-color: var(--ink-400);
 }
 
 .toolbar-btn {
@@ -452,7 +461,7 @@
 
 .toolbar-btn:hover {
   color: var(--ink-000);
-  border-color: var(--ink-500);
+  border-color: var(--ink-400);
 }
 
 .toolbar-btn-on {
@@ -576,7 +585,7 @@
 }
 
 .td-dim {
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 /* The verdict stripe is the only saturated element in the table body. */
@@ -624,7 +633,7 @@
 /* tree glyphs in the process name column */
 .tree-rail {
   display: inline-block;
-  color: var(--ink-600);
+  color: var(--ink-500);
   font-family: var(--font-mono);
   white-space: pre;
 }
@@ -648,7 +657,7 @@
   background: var(--ink-900);
   border-top: 1px solid var(--ink-700);
   font-size: var(--text-xs);
-  color: var(--ink-500);
+  color: var(--ink-400);
 }
 
 .inspector-main {
@@ -760,7 +769,7 @@
 }
 
 .pivot:hover {
-  border-color: var(--ink-500);
+  border-color: var(--ink-400);
   color: var(--ink-000);
   background: var(--ink-850);
 }
@@ -770,6 +779,7 @@
 .status {
   display: flex;
   align-items: center;
+  height: 100%;
   gap: var(--s-6);
   padding: 0 var(--s-6);
   background: var(--ink-900);
