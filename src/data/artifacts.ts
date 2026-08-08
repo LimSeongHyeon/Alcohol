@@ -131,6 +131,18 @@ export function generateHandles(owners: { pid: number; name: string; handles: nu
     return Math.abs(seed) / 0x7fffffff;
   };
 
+  /**
+   * Kernel pool allocations cluster: the allocator works out of a handful of
+   * regions rather than scattering across physical memory. Uniform random
+   * offsets made the address ribbon draw a flat grey band, which is not what an
+   * analyst sees on a real image. These arenas give the substrate the lumpy
+   * texture the real thing has.
+   */
+  const arenas = Array.from({ length: 26 }, (_, i) => {
+    const base = 0x21000000 + Math.floor((i / 26) * 0xc8000000) + Math.floor(rand() * 0x3000000);
+    return { base, span: 0x180000 + Math.floor(rand() * 0x2c00000) };
+  });
+
   for (const owner of owners) {
     const count = owner.handles ?? 0;
     for (let i = 0; i < count; i++) {
@@ -141,10 +153,12 @@ export function generateHandles(owners: { pid: number; name: string; handles: nu
       else if (type === "Mutant") name = `\\Sessions\\1\\BaseNamedObjects\\{${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}}`;
       else if (type === "Directory") name = "\\KnownDlls";
       else if (type === "Token") name = "";
+      // Weighted toward the low arenas, the way the pool actually fills.
+      const arena = arenas[Math.min(arenas.length - 1, Math.floor(rand() ** 1.7 * arenas.length))] ?? arenas[0]!;
       rows.push({
         pid: owner.pid,
         process: owner.name,
-        offset: 0x20000000 + Math.floor(rand() * 0xd0000000),
+        offset: arena.base + Math.floor(rand() * arena.span),
         handleValue: (i + 1) * 4,
         type,
         grantedAccess: [0x1f0001, 0x100020, 0x20019, 0x1fffff, 0x120089, 0x1f0003][Math.floor(rand() * 6)] ?? 0x1f0001,

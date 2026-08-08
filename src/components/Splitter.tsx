@@ -6,7 +6,8 @@ const MAX_FRACTION = 0.75;
 /** Shared by the initial mount and the double-click reset, so "reset" returns
  *  to the same size on a laptop as it does on a workstation. A hardcoded
  *  constant made the reset *grow* the panel at 720p. */
-export const defaultInspectorHeight = () => Math.round(Math.min(272, window.innerHeight * 0.29));
+export const defaultInspectorHeight = () =>
+  Math.round(Math.max(MIN, Math.min(272, window.innerHeight * 0.24)));
 
 /**
  * Horizontal splitter between the results table and the inspector.

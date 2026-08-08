@@ -16,6 +16,7 @@ import { processes, verdictOf } from "./data/processes";
 import { connections, generateHandles, injections } from "./data/artifacts";
 import type { HandleRow, MalfindRow, NetRow, ProcessRow, Verdict } from "./types";
 import type { HighlightId, HighlightMap } from "./highlights";
+import { emptySelection, singleSelection, type Selection } from "./selection";
 import { applyCollapse, computeTree } from "./tree";
 import { clock, count, elapsed, hex } from "./format";
 import "./styles/app.css";
@@ -51,6 +52,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("pstree");
   const [selectedPid, setSelectedPid] = useState<number | null>(3204);
   const [selectedOffset, setSelectedOffset] = useState<number | null>(0xc0d92080);
+  // One selection per tab: switching to netscan and back should not lose the
+  // rows an analyst had gathered in the tree.
+  const [selections, setSelections] = useState<Record<TabKey, Selection>>(() => ({
+    pstree: singleSelection("p3204"),
+    netscan: emptySelection(),
+    malfind: emptySelection(),
+    handles: emptySelection(),
+  }));
+  const selection = selections[activeTab];
+  const setSelection = (next: Selection) => setSelections((prev) => ({ ...prev, [activeTab]: next }));
   const [filter, setFilter] = useState("");
   const [alertsOnly, setAlertsOnly] = useState(false);
   // Seeded so the feature is visible on first load. Keys are row keys, which is
@@ -72,11 +83,15 @@ export default function App() {
 
   const streaming = streamed < allHandles.length;
 
-  const mark = (key: string, id: HighlightId | null) => {
+  /** Marks every key at once, so highlighting a range is one action and one
+   *  undo-sized change rather than twenty. */
+  const mark = (keys: string[], id: HighlightId | null) => {
     setHighlights((prev) => {
       const next = { ...prev };
-      if (id === null) delete next[key];
-      else next[key] = id;
+      for (const key of keys) {
+        if (id === null) delete next[key];
+        else next[key] = id;
+      }
       return next;
     });
     setDirty(true);
@@ -161,27 +176,54 @@ export default function App() {
     }
   }, [activeTab, procRows, netRows, handleRows]);
 
+  // Everything the session has recovered, thinned so the substrate reads as
+  // texture rather than a solid block.
+  const ribbonContext = useMemo(
+    () => [
+      ...processes.map((p) => p.offset),
+      ...connections.map((c) => c.offset),
+      ...allHandles.filter((_, i) => i % 8 === 0).map((h) => h.offset),
+    ],
+    [],
+  );
+
   const ribbonCaption =
     activeTab === "malfind"
       ? "malfind reports virtual addresses — not plottable here"
       : `${activeTab} · ${count(ribbonMarks.length)} marks`;
 
-  /** Shared menu tail: highlight swatches, then copy and filter actions built
-   *  from the column the analyst actually right-clicked. */
+  /**
+   * Shared menu tail: highlight swatches, then copy and filter actions.
+   *
+   * Everything here acts on the whole selection. Single-row actions built from
+   * the clicked cell only appear when exactly one row is selected — "filter by
+   * this value" is meaningless when the analyst has twelve rows marked.
+   */
   function baseMenu<T>(
-    key: string,
+    keys: string[],
     row: T,
     column: Column<T> | null,
     columns: Column<T>[],
+    rowsInTable: T[],
+    rowKeyOf: (r: T) => string,
     extra: MenuItem[],
   ): MenuItem[] {
+    const key = keys[0] ?? "";
+    const multiple = keys.length > 1;
+    const targets = new Set(keys);
     const cellText = column?.text?.(row);
+    const asTsv = (r: T) => columns.map((c) => c.text?.(r) ?? "").join("\t");
+
     return [
-      { kind: "highlights", active: highlights[key] ?? null, onPick: (id) => mark(key, id) },
+      {
+        kind: "highlights",
+        active: multiple ? null : (highlights[key] ?? null),
+        onPick: (id) => mark(keys, id),
+      },
       { kind: "separator" },
-      ...extra,
-      { kind: "separator" },
-      ...(cellText !== undefined && column
+      ...(multiple ? [] : extra),
+      ...(multiple ? [] : [{ kind: "separator" as const }]),
+      ...(!multiple && cellText !== undefined && column
         ? [
             { kind: "action" as const, label: `Copy ${column.header.toLowerCase()}`, onSelect: () => copy(cellText) },
             { kind: "action" as const, label: "Filter rows by this value", onSelect: () => setFilter(cellText) },
@@ -189,14 +231,15 @@ export default function App() {
         : []),
       {
         kind: "action",
-        label: "Copy row as TSV",
-        onSelect: () => copy(columns.map((c) => c.text?.(row) ?? "").join("\t")),
+        label: multiple ? `Copy ${keys.length} rows as TSV` : "Copy row as TSV",
+        onSelect: () =>
+          copy(multiple ? rowsInTable.filter((r) => targets.has(rowKeyOf(r))).map(asTsv).join("\n") : asTsv(row)),
       },
     ];
   }
 
-  function openMenu(title: string, items: MenuItem[], e: MouseEvent) {
-    setMenu({ x: e.clientX, y: e.clientY, title, items });
+  function openMenu(title: string, items: MenuItem[], e: MouseEvent, targetCount: number) {
+    setMenu({ x: e.clientX, y: e.clientY, title: targetCount > 1 ? `${targetCount} rows selected` : title, items });
   }
 
   const procColumns: Column<ProcessRow>[] = [
@@ -304,7 +347,13 @@ export default function App() {
       </div>
 
       <div className="app-ribbon">
-        <AddressRibbon maxAddress={image.maxAddress} marks={ribbonMarks} selected={selectedOffset} caption={ribbonCaption} />
+        <AddressRibbon
+          maxAddress={image.maxAddress}
+          marks={ribbonMarks}
+          context={ribbonContext}
+          selected={selectedOffset}
+          caption={ribbonCaption}
+        />
       </div>
 
       <div className="app-nav">
@@ -381,6 +430,7 @@ export default function App() {
               ) : (
                 <span>{elapsed(tabMeta?.elapsedMs ?? 0)}</span>
               )}
+              {selection.keys.size > 1 && <span className="toolbar-selcount">{count(selection.keys.size)} selected</span>}
               <span>
                 {count(visibleCount)}
                 {visibleCount !== (tabMeta?.total ?? 0) && activeTab !== "handles" ? ` of ${count(tabMeta?.total ?? 0)}` : ""} rows
@@ -393,23 +443,25 @@ export default function App() {
               rows={procRows}
               columns={procColumns}
               rowKey={(r) => `p${r.pid}`}
-              selectedKey={selectedPid === null ? null : `p${selectedPid}`}
-              onSelect={(r) => {
+              selection={selection}
+              onSelectionChange={setSelection}
+              onPrimaryRow={(r) => {
                 setSelectedPid(r.pid);
                 setSelectedOffset(r.offset);
               }}
               verdictOf={(r) => verdictOf(r.findings)}
               highlights={highlights}
-              onRowContextMenu={(r, col, e) =>
+              onRowContextMenu={(r, col, e, keys) =>
                 openMenu(
                   `${r.name} · pid ${r.pid}`,
-                  baseMenu(`p${r.pid}`, r, col, procColumns, [
+                  baseMenu(keys, r, col, procColumns, procRows, (x) => `p${x.pid}`, [
                     { kind: "action", label: `Run cmdline --pid ${r.pid}`, onSelect: () => setActiveTab("handles") },
                     { kind: "action", label: `Run malfind --pid ${r.pid}`, onSelect: () => setActiveTab("malfind") },
                     { kind: "action", label: `Show connections owned by ${r.pid}`, onSelect: () => { setActiveTab("netscan"); setFilter(String(r.pid)); } },
                     { kind: "action", label: "Collapse subtree", disabled: !(shapeByPid.get(r.pid)?.hasChildren ?? false), onSelect: () => setCollapsed((p) => new Set(p).add(r.pid)) },
                   ]),
                   e,
+                  keys.length,
                 )
               }
             />
@@ -419,21 +471,23 @@ export default function App() {
               rows={netRows}
               columns={netColumns}
               rowKey={(r) => `n${r.offset}`}
-              selectedKey={selectedOffset === null ? null : `n${selectedOffset}`}
-              onSelect={(r) => {
+              selection={selection}
+              onSelectionChange={setSelection}
+              onPrimaryRow={(r) => {
                 setSelectedPid(r.pid);
                 setSelectedOffset(r.offset);
               }}
               verdictOf={netVerdict}
               highlights={highlights}
-              onRowContextMenu={(r, col, e) =>
+              onRowContextMenu={(r, col, e, keys) =>
                 openMenu(
                   `${r.owner} · ${r.foreignAddr}:${r.foreignPort}`,
-                  baseMenu(`n${r.offset}`, r, col, netColumns, [
+                  baseMenu(keys, r, col, netColumns, netRows, (x) => `n${x.offset}`, [
                     { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
                     { kind: "action", label: `Filter to ${r.foreignAddr}`, onSelect: () => setFilter(r.foreignAddr) },
                   ]),
                   e,
+                  keys.length,
                 )
               }
             />
@@ -443,18 +497,20 @@ export default function App() {
               rows={malRows}
               columns={malColumns}
               rowKey={(r) => `m${r.pid}-${r.start}`}
-              selectedKey={null}
-              onSelect={(r) => setSelectedPid(r.pid)}
+              selection={selection}
+              onSelectionChange={setSelection}
+              onPrimaryRow={(r) => setSelectedPid(r.pid)}
               verdictOf={malVerdict}
               highlights={highlights}
-              onRowContextMenu={(r, col, e) =>
+              onRowContextMenu={(r, col, e, keys) =>
                 openMenu(
                   `${r.process} · ${hex(r.start)}`,
-                  baseMenu(`m${r.pid}-${r.start}`, r, col, malColumns, [
+                  baseMenu(keys, r, col, malColumns, malRows, (x) => `m${x.pid}-${x.start}`, [
                     { kind: "action", label: "Dump this region", onSelect: () => undefined },
                     { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
                   ]),
                   e,
+                  keys.length,
                 )
               }
             />
@@ -464,17 +520,19 @@ export default function App() {
               rows={handleRows}
               columns={handleColumns}
               rowKey={(r) => `h${r.pid}-${r.handleValue}-${r.offset}`}
-              selectedKey={null}
-              onSelect={(r) => setSelectedPid(r.pid)}
+              selection={selection}
+              onSelectionChange={setSelection}
+              onPrimaryRow={(r) => setSelectedPid(r.pid)}
               verdictOf={() => "clean"}
               highlights={highlights}
-              onRowContextMenu={(r, col, e) =>
+              onRowContextMenu={(r, col, e, keys) =>
                 openMenu(
                   `${r.type} · ${r.process}`,
-                  baseMenu(`h${r.pid}-${r.handleValue}-${r.offset}`, r, col, handleColumns, [
+                  baseMenu(keys, r, col, handleColumns, handleRows, (x) => `h${x.pid}-${x.handleValue}-${x.offset}`, [
                     { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
                   ]),
                   e,
+                  keys.length,
                 )
               }
             />

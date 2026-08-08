@@ -93,7 +93,9 @@
   /* ---- Structure */
   --row-h: 28px;
   --bar-h: 78px;
-  --ribbon-h: 44px;
+  /* The ribbon is the landmark of this interface, so it gets the room to look
+   * like an instrument rather than a strip of chrome. */
+  --ribbon-h: 104px;
   --nav-w: 258px;
   --tree-indent: 18px;
 
@@ -106,6 +108,21 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --dur-fast: 90ms;
   --dur: 150ms;
+}
+
+/*
+ * Short screens.
+ *
+ * On a 1440x900 workstation the ribbon can afford to be the landmark it is. On
+ * a 720p laptop the fixed chrome was taking 44% of the viewport and the table —
+ * the actual product — was down to seven rows. The instrument gives way to the
+ * data rather than the other way round.
+ */
+@media (max-height: 820px) {
+  :root {
+    --bar-h: 66px;
+    --ribbon-h: 74px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
