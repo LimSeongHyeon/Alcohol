@@ -11,11 +11,15 @@ export function StatusBar({
   contextAgeMs,
   symbolTable,
   totalRows,
+  caseName,
+  dirty,
 }: {
   pluginsRun: number;
   contextAgeMs: number;
   symbolTable: string;
   totalRows: number;
+  caseName: string;
+  dirty: boolean;
 }) {
   return (
     <footer className="status">
@@ -32,6 +36,10 @@ export function StatusBar({
       <span className="status-right">
         <span>{count(totalRows)} rows held</span>
         <span>1 worker idle · 3 free</span>
+        <span className={dirty ? "status-dirty" : ""}>
+          {caseName}
+          {dirty ? " · unsaved changes" : ""}
+        </span>
       </span>
     </footer>
   );

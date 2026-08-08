@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Verdict } from "../types";
+import { highlightFill, type HighlightMap } from "../highlights";
 
 export interface Column<T> {
   key: string;
@@ -9,9 +10,12 @@ export interface Column<T> {
   width: number;
   align?: "right";
   render: (row: T) => ReactNode;
+  /** Plain text for copy-to-clipboard and filter-by-value. */
+  text?: (row: T) => string;
 }
 
-const ROW_H = 24;
+/** Must match --row-h in tokens.css. */
+const ROW_H = 28;
 
 export function DataTable<T>({
   rows,
@@ -20,6 +24,8 @@ export function DataTable<T>({
   selectedKey,
   onSelect,
   verdictOf,
+  highlights,
+  onRowContextMenu,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -27,6 +33,8 @@ export function DataTable<T>({
   selectedKey: string | null;
   onSelect: (row: T) => void;
   verdictOf: (row: T) => Verdict;
+  highlights: HighlightMap;
+  onRowContextMenu: (row: T, column: Column<T> | null, event: MouseEvent) => void;
 }) {
   // Held in state, not a ref: the virtualizer only measures the viewport once it
   // has the element, and a ref assignment does not trigger the re-render that
@@ -112,19 +120,33 @@ export function DataTable<T>({
             if (!row) return null;
             const key = rowKey(row);
             const verdict = verdictOf(row);
+            const fill = highlightFill(highlights[key]);
             return (
               <div
                 key={key}
-                className={`tr${selectedKey === key ? " tr-selected" : ""}`}
-                style={{ transform: `translateY(${v.start}px)` }}
+                className={`tr${selectedKey === key ? " tr-selected" : ""}${fill ? " tr-highlighted" : ""}`}
+                style={fill ? { transform: `translateY(${v.start}px)`, background: fill } : { transform: `translateY(${v.start}px)` }}
                 onClick={() => onSelect(row)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  onSelect(row);
+                  const cell = (e.target as HTMLElement).closest<HTMLElement>("[data-col]");
+                  const col = columns.find((c) => c.key === cell?.dataset["col"]) ?? null;
+                  onRowContextMenu(row, col, e);
+                }}
                 role="row"
                 aria-rowindex={v.index + 1}
                 aria-selected={selectedKey === key}
               >
                 <span className={`verdict verdict-${verdict}`} aria-label={verdict === "clean" ? undefined : verdict} />
                 {columns.map((c) => (
-                  <div key={c.key} className={`td${c.align === "right" ? " td-right" : ""}`} style={style(c)} role="cell">
+                  <div
+                    key={c.key}
+                    data-col={c.key}
+                    className={`td${c.align === "right" ? " td-right" : ""}`}
+                    style={style(c)}
+                    role="cell"
+                  >
                     {c.render(row)}
                   </div>
                 ))}

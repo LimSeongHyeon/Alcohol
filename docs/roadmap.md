@@ -17,6 +17,11 @@ streaming simulation. No backend.
 Purpose is to settle the interface direction before wiring anything to it, and
 to have something concrete to argue with.
 
+Also landed in M1: the case picker, right-click actions, analyst highlights,
+a resizable inspector, drawn tree connectors, and a type scale that survives
+being read for an afternoon. The `.alcohol` container is specified in
+[case-file.md](case-file.md) but not yet written or read.
+
 ## M2 — Daemon and first real result
 
 The point at which the tool does something true.
@@ -26,6 +31,7 @@ The point at which the tool does something true.
   [architecture.md](architecture.md)
 - `windows.info` and `windows.pstree` end to end, against a real image
 - Startup dependency probe reported to the UI
+- Read and write `.alcohol`, so a second open skips a plugin that already ran
 - **Measure automagic and symbol-loading cost on a real image and record it**
 
 Exit criterion: opening an image and running two plugins with no `vol.py`

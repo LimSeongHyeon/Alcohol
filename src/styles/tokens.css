@@ -1,11 +1,17 @@
 /*
  * Design tokens.
  *
- * The rule that governs this palette: the interface is achromatic, verdicts are
- * not. Selection, focus, hover and active states are all expressed in lightness
- * alone. The only saturated pixels on screen belong to a finding. An analyst
- * scanning forty thousand rows should be able to trust that colour means
- * something, every time.
+ * Two rules govern colour here.
+ *
+ * 1. The interface is achromatic. Selection, hover, focus and active states are
+ *    expressed in lightness alone.
+ * 2. Saturation belongs to meaning. Two kinds of meaning, kept in separate
+ *    visual channels so they never compete:
+ *      - a VERDICT is computed by the tool. Small, solid, saturated: a 3px
+ *        stripe at the row's leading edge.
+ *      - a HIGHLIGHT is applied by the analyst, the way you would run a marker
+ *        over a printout. Large, translucent, desaturated: the row fill.
+ *    A row can carry both and still be read at a glance.
  */
 
 :root {
@@ -18,10 +24,11 @@
   --ink-750: #262a32; /* hover */
   --ink-700: #2e323b; /* rule */
   --ink-600: #3a3f4a; /* rule strong */
-  /* Text ramp. Every step below is measured against --ink-950 (#101114), the
-   * darkest surface text sits on, and clears WCAG AA for small text. Analysts
-   * read this interface for hours; a recessive tone that cannot be read is not
-   * restraint, it is a defect. The faintest step is the floor, not a suggestion.
+
+  /* Text ramp. Every step is measured against --ink-950 (#101114), the darkest
+   * surface text sits on, and clears WCAG AA for small text. Analysts read this
+   * interface for hours; a recessive tone that cannot be read is not restraint,
+   * it is a defect.
    *
    *   --ink-500  4.9:1   --ink-400  6.6:1   --ink-300  9.0:1
    */
@@ -32,7 +39,7 @@
   --ink-100: #d3d9e1; /* body */
   --ink-000: #eef1f5; /* primary text, active affordance */
 
-  /* ---- Verdict. Reserved. Do not use these for chrome. */
+  /* ---- Verdict. Tool-computed. Reserved for the row stripe and finding tags. */
   --verdict-alert: #dd5c46;
   --verdict-alert-dim: #4a221c;
   --verdict-notice: #d0a03f;
@@ -40,22 +47,39 @@
   --verdict-clean: #5b9c78;
   --verdict-clean-dim: #1d332a;
 
+  /* ---- Highlight. Analyst-applied. Translucent so the row text keeps its
+   * contrast and the selected/hover states still show through. Kept pale on
+   * purpose: a marked row should be findable when scrolling, not shout over
+   * the verdict stripe next to it. */
+  --hl-amber: rgba(216, 170, 92, 0.15);
+  --hl-rose: rgba(219, 124, 124, 0.15);
+  --hl-violet: rgba(163, 141, 216, 0.15);
+  --hl-teal: rgba(108, 188, 186, 0.15);
+  --hl-green: rgba(126, 190, 132, 0.15);
+
+  /* Opaque twins for swatches in menus, where translucency reads as muddy. */
+  --hl-amber-solid: #b78e4d;
+  --hl-rose-solid: #ba6a6a;
+  --hl-violet-solid: #8c79ba;
+  --hl-teal-solid: #5ca09e;
+  --hl-green-solid: #6ba070;
+
   /* ---- Type */
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-condensed: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --text-micro: 10px;   /* column headers, eyebrows */
-  --text-xs: 11px;      /* table body, dense metadata */
-  --text-sm: 12px;      /* nav, labels */
-  --text-base: 13px;    /* default UI */
-  --text-md: 15px;
-  --text-lg: 19px;
+  --text-micro: 11px;   /* column headers, eyebrows */
+  --text-xs: 12px;      /* dense secondary metadata */
+  --text-sm: 13px;      /* table body, nav — the size most of the app is read at */
+  --text-base: 14px;    /* default UI */
+  --text-md: 17px;
+  --text-lg: 22px;
 
-  --tracking-eyebrow: 0.09em;
+  --tracking-eyebrow: 0.08em;
   --tracking-tight: -0.011em;
 
-  /* ---- Space. 4px base. Dense by intent. */
+  /* ---- Space. 4px base. Dense, but not cramped. */
   --s-1: 2px;
   --s-2: 4px;
   --s-3: 6px;
@@ -67,13 +91,14 @@
   --s-9: 32px;
 
   /* ---- Structure */
-  --row-h: 24px;        /* table row. tuned so ~40 rows fit a laptop viewport */
-  --bar-h: 44px;        /* image bar */
-  --ribbon-h: 38px;
-  --nav-w: 232px;
-  /* The table is the product, so the inspector yields to it on short screens.
-   * At 720p this leaves the table ~14 rows; at 1080p, ~26. */
-  --inspector-h: clamp(150px, 26vh, 260px);
+  --row-h: 28px;
+  --bar-h: 78px;
+  --ribbon-h: 44px;
+  --nav-w: 258px;
+  --tree-indent: 18px;
+
+  /* Runtime-controlled: the inspector splitter writes this. */
+  --inspector-h: 264px;
 
   --radius: 3px;
 

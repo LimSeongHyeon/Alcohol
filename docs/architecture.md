@@ -116,6 +116,21 @@ plugin that quietly does not exist. See
 [analysis-workflows.md](analysis-workflows.md) for why this is a correctness
 issue and not a polish issue.
 
+## Opening an image
+
+Not uploading one. An image is evidence — eight gigabytes that must not be
+copied, moved or altered — so the tool records a path and a SHA-256 and reads in
+place.
+
+This is the one place where the browser and the shell genuinely diverge. A
+browser's `<input type="file">` hands over bytes and hides the path, which is
+useless here; Tauri's native dialog returns the path, which is the only thing we
+want. The picker in `src/components/OpenImage.tsx` is built for the Tauri model,
+and its two buttons are theatre until the shell exists.
+
+Results are persisted to a `.alcohol` case archive so that reopening an image
+does not re-run work already done. Format in [case-file.md](case-file.md).
+
 ## The frontend
 
 Vite + React + TypeScript. Currently runs standalone against fixtures in

@@ -56,6 +56,10 @@ file.*.dat
 file.*.img
 pid.*.dmp
 
+# Case files. Not evidence, but plugin output carries user names, paths, IPs and
+# registry contents. See docs/case-file.md.
+*.alcohol
+
 # ==============================================================================
 # Volatility 3 caches and symbol tables
 # ==============================================================================

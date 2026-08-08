@@ -1,15 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { ImageBar } from "./components/ImageBar";
 import { AddressRibbon, type RibbonMark } from "./components/AddressRibbon";
 import { PluginNav } from "./components/PluginNav";
 import { DataTable, type Column } from "./components/DataTable";
 import { Inspector } from "./components/Inspector";
 import { StatusBar } from "./components/StatusBar";
+import { ContextMenu, type MenuItem, type MenuState } from "./components/ContextMenu";
+import { OpenImage, type RecentCase } from "./components/OpenImage";
+import { Splitter, defaultInspectorHeight } from "./components/Splitter";
+import { TreeCell } from "./components/TreeCell";
 import { image } from "./data/image";
+import { recentCases } from "./data/cases";
 import { phases, plugins as pluginCatalog } from "./data/phases";
 import { processes, verdictOf } from "./data/processes";
 import { connections, generateHandles, injections } from "./data/artifacts";
 import type { HandleRow, MalfindRow, NetRow, ProcessRow, Verdict } from "./types";
+import type { HighlightId, HighlightMap } from "./highlights";
+import { applyCollapse, computeTree } from "./tree";
 import { clock, count, elapsed, hex } from "./format";
 import "./styles/app.css";
 
@@ -23,41 +30,57 @@ interface TabDef {
   label: string;
   total: number;
   elapsedMs: number;
+  /** True when the rows came out of the case file instead of a fresh run. */
+  cached: boolean;
 }
 
 const TABS: TabDef[] = [
-  { key: "pstree", pluginId: "windows.pstree.PsTree", label: "pstree", total: processes.length, elapsedMs: 412 },
-  { key: "netscan", pluginId: "windows.netscan.NetScan", label: "netscan", total: connections.length, elapsedMs: 2870 },
-  { key: "malfind", pluginId: "windows.malware.malfind.Malfind", label: "malfind", total: injections.length, elapsedMs: 6104 },
-  { key: "handles", pluginId: "windows.handles.Handles", label: "handles", total: allHandles.length, elapsedMs: 0 },
+  { key: "pstree", pluginId: "windows.pstree.PsTree", label: "pstree", total: processes.length, elapsedMs: 412, cached: true },
+  { key: "netscan", pluginId: "windows.netscan.NetScan", label: "netscan", total: connections.length, elapsedMs: 2870, cached: true },
+  { key: "malfind", pluginId: "windows.malware.malfind.Malfind", label: "malfind", total: injections.length, elapsedMs: 6104, cached: true },
+  { key: "handles", pluginId: "windows.handles.Handles", label: "handles", total: allHandles.length, elapsedMs: 0, cached: false },
 ];
 
 const netVerdict = (r: NetRow): Verdict => verdictOf(r.findings);
 const malVerdict = (r: MalfindRow): Verdict => verdictOf(r.findings);
 
-/** Rail glyphs so depth is readable without a connector-line canvas. */
-function treeRail(depth: number): string {
-  if (depth === 0) return "";
-  return "│ ".repeat(Math.max(0, depth - 1)) + "└ ";
-}
+const copy = (text: string) => void navigator.clipboard?.writeText(text);
 
 export default function App() {
+  const [openCase, setOpenCase] = useState<RecentCase | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("pstree");
   const [selectedPid, setSelectedPid] = useState<number | null>(3204);
   const [selectedOffset, setSelectedOffset] = useState<number | null>(0xc0d92080);
   const [filter, setFilter] = useState("");
   const [alertsOnly, setAlertsOnly] = useState(false);
+  // Seeded so the feature is visible on first load. Keys are row keys, which is
+  // what lets a mark survive filtering, sorting and collapsing.
+  const [highlights, setHighlights] = useState<HighlightMap>({ p4412: "amber" });
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set());
+  // A fixed default starves the table on a laptop. Start proportional, then the
+  // splitter takes over and the analyst's choice sticks for the session.
+  const [inspectorH, setInspectorH] = useState(defaultInspectorHeight);
+  const [menu, setMenu] = useState<MenuState | null>(null);
+  const [dirty, setDirty] = useState(false);
 
-  // The handles run streams in, the way a generator-backed plugin actually
-  // arrives. Rows are usable while the plugin is still going.
   const [streamed, setStreamed] = useState(0);
   useEffect(() => {
-    if (streamed >= allHandles.length) return;
+    if (!openCase || streamed >= allHandles.length) return;
     const id = window.setTimeout(() => setStreamed((n) => Math.min(allHandles.length, n + 1400)), 70);
     return () => window.clearTimeout(id);
-  }, [streamed]);
+  }, [streamed, openCase]);
 
   const streaming = streamed < allHandles.length;
+
+  const mark = (key: string, id: HighlightId | null) => {
+    setHighlights((prev) => {
+      const next = { ...prev };
+      if (id === null) delete next[key];
+      else next[key] = id;
+      return next;
+    });
+    setDirty(true);
+  };
 
   const catalog = useMemo(
     () =>
@@ -66,13 +89,10 @@ export default function App() {
         if (!tab) return p;
         const rows = tab.key === "handles" ? streamed : tab.total;
         const alerts =
-          tab.key === "pstree"
-            ? processes.filter((r) => verdictOf(r.findings) === "alert").length
-            : tab.key === "netscan"
-              ? connections.filter((r) => netVerdict(r) === "alert").length
-              : tab.key === "malfind"
-                ? injections.filter((r) => malVerdict(r) === "alert").length
-                : 0;
+          tab.key === "pstree" ? processes.filter((r) => verdictOf(r.findings) === "alert").length
+          : tab.key === "netscan" ? connections.filter((r) => netVerdict(r) === "alert").length
+          : tab.key === "malfind" ? injections.filter((r) => malVerdict(r) === "alert").length
+          : 0;
         return { ...p, run: { rows, elapsedMs: tab.elapsedMs, alerts } };
       }),
     [streamed],
@@ -85,12 +105,26 @@ export default function App() {
 
   const q = filter.trim().toLowerCase();
 
+  // Collapsing happens before filtering: folding a subtree away should hide it
+  // whatever the filter says, and filtering a folded tree should not silently
+  // resurrect its children.
+  const visibleProcesses = useMemo(
+    () => applyCollapse(processes, (row) => collapsed.has(row.pid)),
+    [collapsed],
+  );
+
   const procRows = useMemo(() => {
-    let rows = processes;
+    let rows = visibleProcesses;
     if (q) rows = rows.filter((r) => `${r.pid} ${r.ppid} ${r.name} ${r.cmdline ?? ""}`.toLowerCase().includes(q));
     if (alertsOnly) rows = rows.filter((r) => verdictOf(r.findings) !== "clean");
     return rows;
-  }, [q, alertsOnly]);
+  }, [visibleProcesses, q, alertsOnly]);
+
+  const procShapes = useMemo(() => computeTree(procRows.map((r) => r.depth)), [procRows]);
+  const shapeByPid = useMemo(
+    () => new Map(procRows.map((r, i) => [r.pid, procShapes[i]!])),
+    [procRows, procShapes],
+  );
 
   const netRows = useMemo(() => {
     let rows = connections;
@@ -121,9 +155,7 @@ export default function App() {
       case "netscan":
         return netRows.map((r) => ({ offset: r.offset, verdict: netVerdict(r), label: `${r.owner} → ${r.foreignAddr}` }));
       case "handles":
-        return handleRows
-          .filter((_, i) => i % 24 === 0)
-          .map((r) => ({ offset: r.offset, verdict: "clean" as const, label: `${r.type} (${r.process})` }));
+        return handleRows.filter((_, i) => i % 24 === 0).map((r) => ({ offset: r.offset, verdict: "clean" as const, label: `${r.type} (${r.process})` }));
       default:
         return [];
     }
@@ -134,101 +166,145 @@ export default function App() {
       ? "malfind reports virtual addresses — not plottable here"
       : `${activeTab} · ${count(ribbonMarks.length)} marks`;
 
+  /** Shared menu tail: highlight swatches, then copy and filter actions built
+   *  from the column the analyst actually right-clicked. */
+  function baseMenu<T>(
+    key: string,
+    row: T,
+    column: Column<T> | null,
+    columns: Column<T>[],
+    extra: MenuItem[],
+  ): MenuItem[] {
+    const cellText = column?.text?.(row);
+    return [
+      { kind: "highlights", active: highlights[key] ?? null, onPick: (id) => mark(key, id) },
+      { kind: "separator" },
+      ...extra,
+      { kind: "separator" },
+      ...(cellText !== undefined && column
+        ? [
+            { kind: "action" as const, label: `Copy ${column.header.toLowerCase()}`, onSelect: () => copy(cellText) },
+            { kind: "action" as const, label: "Filter rows by this value", onSelect: () => setFilter(cellText) },
+          ]
+        : []),
+      {
+        kind: "action",
+        label: "Copy row as TSV",
+        onSelect: () => copy(columns.map((c) => c.text?.(row) ?? "").join("\t")),
+      },
+    ];
+  }
+
+  function openMenu(title: string, items: MenuItem[], e: MouseEvent) {
+    setMenu({ x: e.clientX, y: e.clientY, title, items });
+  }
+
   const procColumns: Column<ProcessRow>[] = [
-    { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono td-strong">{r.pid}</span> },
-    { key: "ppid", header: "PPID", width: 56, align: "right", render: (r) => <span className="td-mono">{r.ppid}</span> },
+    { key: "pid", header: "PID", width: 62, align: "right", render: (r) => <span className="td-mono td-strong">{r.pid}</span>, text: (r) => String(r.pid) },
+    { key: "ppid", header: "PPID", width: 62, align: "right", render: (r) => <span className="td-mono">{r.ppid}</span>, text: (r) => String(r.ppid) },
     {
       key: "name",
       header: "Image",
-      width: 292,
+      width: 340,
+      text: (r) => r.name,
       render: (r) => (
-        <>
-          <span className="tree-rail">{treeRail(r.depth)}</span>
+        <TreeCell
+          shape={shapeByPid.get(r.pid) ?? { isLast: true, rails: [], hasChildren: false }}
+          depth={r.depth}
+          collapsed={collapsed.has(r.pid)}
+          onToggle={() =>
+            setCollapsed((prev) => {
+              const next = new Set(prev);
+              if (next.has(r.pid)) next.delete(r.pid);
+              else next.add(r.pid);
+              return next;
+            })
+          }
+        >
           <span className={verdictOf(r.findings) === "clean" ? "" : "td-strong"}>{r.name}</span>
-          {!r.listWalkVisible && <span className="tag tag-alert" style={{ marginLeft: 6 }}>unlinked</span>}
-          {r.exitTime && <span className="tag tag-neutral" style={{ marginLeft: 6 }}>exited</span>}
-        </>
+          {!r.listWalkVisible && <span className="tag tag-alert">unlinked</span>}
+          {r.exitTime && <span className="tag tag-neutral">exited</span>}
+        </TreeCell>
       ),
     },
     // pstree does not carry the command line; the GUI joins it in, because
     // "what was it launched with" is the next question in every case and the
     // CLI makes you run a second plugin to answer it.
-    {
-      key: "cmdline",
-      header: "Command line",
-      width: 0,
-      render: (r) => <span className="td-mono td-dim">{r.cmdline ?? "—"}</span>,
-    },
-    { key: "offset", header: "Offset(P)", width: 106, render: (r) => <span className="td-mono">{hex(r.offset)}</span> },
-    { key: "threads", header: "Thr", width: 48, align: "right", render: (r) => <span className="td-mono">{r.threads}</span> },
-    { key: "handles", header: "Hnd", width: 56, align: "right", render: (r) => <span className="td-mono">{r.handles ?? "—"}</span> },
-    { key: "sess", header: "Sess", width: 48, align: "right", render: (r) => <span className="td-mono">{r.sessionId ?? "—"}</span> },
-    { key: "start", header: "Started", width: 74, render: (r) => <span className="td-mono">{clock(r.createTime)}</span> },
+    { key: "cmdline", header: "Command line", width: 0, render: (r) => <span className="td-mono td-dim">{r.cmdline ?? "—"}</span>, text: (r) => r.cmdline ?? "" },
+    { key: "offset", header: "Offset(P)", width: 118, render: (r) => <span className="td-mono">{hex(r.offset)}</span>, text: (r) => hex(r.offset) },
+    { key: "threads", header: "Thr", width: 54, align: "right", render: (r) => <span className="td-mono">{r.threads}</span>, text: (r) => String(r.threads) },
+    { key: "handles", header: "Hnd", width: 62, align: "right", render: (r) => <span className="td-mono">{r.handles ?? "—"}</span>, text: (r) => String(r.handles ?? "") },
+    { key: "sess", header: "Sess", width: 54, align: "right", render: (r) => <span className="td-mono">{r.sessionId ?? "—"}</span>, text: (r) => String(r.sessionId ?? "") },
+    { key: "start", header: "Started", width: 82, render: (r) => <span className="td-mono">{clock(r.createTime)}</span>, text: (r) => r.createTime },
   ];
 
   const netColumns: Column<NetRow>[] = [
-    { key: "proto", header: "Proto", width: 62, render: (r) => <span className="td-mono">{r.proto}</span> },
-    { key: "local", header: "Local address", width: 130, render: (r) => <span className="td-mono">{r.localAddr}</span> },
-    { key: "lport", header: "Port", width: 56, align: "right", render: (r) => <span className="td-mono td-strong">{r.localPort}</span> },
-    { key: "foreign", header: "Foreign address", width: 130, render: (r) => <span className="td-mono td-strong">{r.foreignAddr}</span> },
-    { key: "fport", header: "Port", width: 56, align: "right", render: (r) => <span className="td-mono">{r.foreignPort || "—"}</span> },
-    { key: "state", header: "State", width: 106, render: (r) => <span className="td-mono">{r.state || "—"}</span> },
-    { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono">{r.pid}</span> },
-    { key: "owner", header: "Owner", width: 168, render: (r) => r.owner },
-    // netscan is a pool scan, so the offset is evidence — and it is what the
-    // ribbon plots. Leaving it out made the ribbon unexplainable.
-    { key: "offset", header: "Offset(P)", width: 116, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span> },
-    { key: "created", header: "Created", width: 74, render: (r) => <span className="td-mono td-dim">{r.created ? clock(r.created) : "—"}</span> },
-    // Trailing slack sits at the edge instead of tearing a hole mid-row.
+    { key: "proto", header: "Proto", width: 70, render: (r) => <span className="td-mono">{r.proto}</span>, text: (r) => r.proto },
+    { key: "local", header: "Local address", width: 146, render: (r) => <span className="td-mono">{r.localAddr}</span>, text: (r) => r.localAddr },
+    { key: "lport", header: "Port", width: 62, align: "right", render: (r) => <span className="td-mono td-strong">{r.localPort}</span>, text: (r) => String(r.localPort) },
+    { key: "foreign", header: "Foreign address", width: 146, render: (r) => <span className="td-mono td-strong">{r.foreignAddr}</span>, text: (r) => r.foreignAddr },
+    { key: "fport", header: "Port", width: 62, align: "right", render: (r) => <span className="td-mono">{r.foreignPort || "—"}</span>, text: (r) => String(r.foreignPort) },
+    { key: "state", header: "State", width: 118, render: (r) => <span className="td-mono">{r.state || "—"}</span>, text: (r) => r.state },
+    { key: "pid", header: "PID", width: 62, align: "right", render: (r) => <span className="td-mono">{r.pid}</span>, text: (r) => String(r.pid) },
+    { key: "owner", header: "Owner", width: 182, render: (r) => r.owner, text: (r) => r.owner },
+    { key: "offset", header: "Offset(P)", width: 126, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span>, text: (r) => hex(r.offset) },
+    { key: "created", header: "Created", width: 82, render: (r) => <span className="td-mono td-dim">{r.created ? clock(r.created) : "—"}</span>, text: (r) => r.created ?? "" },
     { key: "pad", header: "", width: 0, render: () => null },
   ];
 
   const malColumns: Column<MalfindRow>[] = [
-    { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono td-strong">{r.pid}</span> },
-    { key: "process", header: "Process", width: 130, render: (r) => r.process },
-    { key: "start", header: "Start VPN", width: 118, render: (r) => <span className="td-mono">{hex(r.start)}</span> },
-    { key: "end", header: "End VPN", width: 118, render: (r) => <span className="td-mono">{hex(r.end)}</span> },
-    { key: "tag", header: "Tag", width: 52, render: (r) => <span className="td-mono">{r.tag}</span> },
-    {
-      key: "prot",
-      header: "Protection",
-      width: 200,
-      render: (r) => (
-        <span className={r.protection === "PAGE_EXECUTE_READWRITE" ? "td-mono td-strong" : "td-mono"}>{r.protection}</span>
-      ),
-    },
-    { key: "commit", header: "Commit", width: 64, align: "right", render: (r) => <span className="td-mono">{r.commitCharge}</span> },
-    { key: "private", header: "Private", width: 62, render: (r) => <span className="td-mono">{r.privateMemory ? "yes" : "no"}</span> },
-    { key: "bytes", header: "First bytes", width: 0, render: (r) => <span className="td-mono td-dim">{r.hexdump[0]?.slice(0, 60) ?? ""}</span> },
+    { key: "pid", header: "PID", width: 62, align: "right", render: (r) => <span className="td-mono td-strong">{r.pid}</span>, text: (r) => String(r.pid) },
+    { key: "process", header: "Process", width: 146, render: (r) => r.process, text: (r) => r.process },
+    { key: "start", header: "Start VPN", width: 130, render: (r) => <span className="td-mono">{hex(r.start)}</span>, text: (r) => hex(r.start) },
+    { key: "end", header: "End VPN", width: 130, render: (r) => <span className="td-mono">{hex(r.end)}</span>, text: (r) => hex(r.end) },
+    { key: "tag", header: "Tag", width: 58, render: (r) => <span className="td-mono">{r.tag}</span>, text: (r) => r.tag },
+    { key: "prot", header: "Protection", width: 222, render: (r) => <span className={r.protection === "PAGE_EXECUTE_READWRITE" ? "td-mono td-strong" : "td-mono"}>{r.protection}</span>, text: (r) => r.protection },
+    { key: "commit", header: "Commit", width: 72, align: "right", render: (r) => <span className="td-mono">{r.commitCharge}</span>, text: (r) => String(r.commitCharge) },
+    { key: "private", header: "Private", width: 70, render: (r) => <span className="td-mono">{r.privateMemory ? "yes" : "no"}</span>, text: (r) => (r.privateMemory ? "yes" : "no") },
+    { key: "bytes", header: "First bytes", width: 0, render: (r) => <span className="td-mono td-dim">{r.hexdump[0]?.slice(0, 62) ?? ""}</span>, text: (r) => r.hexdump[0] ?? "" },
   ];
 
   const handleColumns: Column<HandleRow>[] = [
-    { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono">{r.pid}</span> },
-    { key: "process", header: "Process", width: 132, render: (r) => r.process },
-    { key: "offset", header: "Offset(V)", width: 108, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span> },
-    { key: "handle", header: "Handle", width: 70, align: "right", render: (r) => <span className="td-mono">{hex(r.handleValue)}</span> },
-    { key: "type", header: "Type", width: 116, render: (r) => r.type },
-    { key: "access", header: "Access", width: 80, render: (r) => <span className="td-mono td-dim">{hex(r.grantedAccess)}</span> },
-    { key: "name", header: "Name", width: 0, render: (r) => <span className="td-mono">{r.name || "—"}</span> },
+    { key: "pid", header: "PID", width: 62, align: "right", render: (r) => <span className="td-mono">{r.pid}</span>, text: (r) => String(r.pid) },
+    { key: "process", header: "Process", width: 148, render: (r) => r.process, text: (r) => r.process },
+    { key: "offset", header: "Offset(V)", width: 122, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span>, text: (r) => hex(r.offset) },
+    { key: "handle", header: "Handle", width: 80, align: "right", render: (r) => <span className="td-mono">{hex(r.handleValue)}</span>, text: (r) => hex(r.handleValue) },
+    { key: "type", header: "Type", width: 128, render: (r) => r.type, text: (r) => r.type },
+    { key: "access", header: "Access", width: 92, render: (r) => <span className="td-mono td-dim">{hex(r.grantedAccess)}</span>, text: (r) => hex(r.grantedAccess) },
+    { key: "name", header: "Name", width: 0, render: (r) => <span className="td-mono">{r.name || "—"}</span>, text: (r) => r.name },
   ];
+
+  if (!openCase) {
+    return (
+      <OpenImage
+        recents={recentCases}
+        onOpenImage={() => setOpenCase(recentCases[0]!)}
+        onOpenCase={(c) => setOpenCase(c)}
+      />
+    );
+  }
 
   const tabMeta = TABS.find((t) => t.key === activeTab);
   const visibleCount =
-    activeTab === "pstree" ? procRows.length : activeTab === "netscan" ? netRows.length : activeTab === "malfind" ? malRows.length : handleRows.length;
+    activeTab === "pstree" ? procRows.length
+    : activeTab === "netscan" ? netRows.length
+    : activeTab === "malfind" ? malRows.length
+    : handleRows.length;
 
   return (
-    <div className="app">
+    <div className="app" style={{ ["--inspector-h" as string]: `${inspectorH}px` }}>
       <div className="app-bar">
-        <ImageBar image={image} />
+        <ImageBar
+          image={image}
+          caseName={openCase.caseFile}
+          dirty={dirty}
+          onSave={() => setDirty(false)}
+          onClose={() => setOpenCase(null)}
+        />
       </div>
 
       <div className="app-ribbon">
-        <AddressRibbon
-          maxAddress={image.maxAddress}
-          marks={ribbonMarks}
-          selected={selectedOffset}
-          caption={ribbonCaption}
-        />
+        <AddressRibbon maxAddress={image.maxAddress} marks={ribbonMarks} selected={selectedOffset} caption={ribbonCaption} />
       </div>
 
       <div className="app-nav">
@@ -261,6 +337,7 @@ export default function App() {
                   <span className="tab-name">{t.label}</span>
                   <span className="tab-count">{count(t.key === "handles" ? streamed : t.total)}</span>
                   {alerts > 0 && <span className="tab-alerts">{alerts}</span>}
+                  {t.cached && <span className="tab-cached" title="Loaded from the case file — not re-run">cached</span>}
                 </button>
               );
             })}
@@ -275,13 +352,19 @@ export default function App() {
               onChange={(e) => setFilter(e.target.value)}
               aria-label="Filter rows"
             />
-            <button
-              className={`toolbar-btn${alertsOnly ? " toolbar-btn-on" : ""}`}
-              onClick={() => setAlertsOnly((v) => !v)}
-              aria-pressed={alertsOnly}
-            >
+            <button className={`toolbar-btn${alertsOnly ? " toolbar-btn-on" : ""}`} onClick={() => setAlertsOnly((v) => !v)} aria-pressed={alertsOnly}>
               Flagged only
             </button>
+            {activeTab === "pstree" && (
+              <>
+                <button className="toolbar-btn" onClick={() => setCollapsed(new Set(processes.filter((p) => p.depth >= 2).map((p) => p.pid)))}>
+                  Collapse
+                </button>
+                <button className="toolbar-btn" onClick={() => setCollapsed(new Set())}>
+                  Expand all
+                </button>
+              </>
+            )}
             <button className="toolbar-btn">Columns</button>
             <button className="toolbar-btn">Export</button>
             <button className="toolbar-btn">Compare</button>
@@ -316,6 +399,19 @@ export default function App() {
                 setSelectedOffset(r.offset);
               }}
               verdictOf={(r) => verdictOf(r.findings)}
+              highlights={highlights}
+              onRowContextMenu={(r, col, e) =>
+                openMenu(
+                  `${r.name} · pid ${r.pid}`,
+                  baseMenu(`p${r.pid}`, r, col, procColumns, [
+                    { kind: "action", label: `Run cmdline --pid ${r.pid}`, onSelect: () => setActiveTab("handles") },
+                    { kind: "action", label: `Run malfind --pid ${r.pid}`, onSelect: () => setActiveTab("malfind") },
+                    { kind: "action", label: `Show connections owned by ${r.pid}`, onSelect: () => { setActiveTab("netscan"); setFilter(String(r.pid)); } },
+                    { kind: "action", label: "Collapse subtree", disabled: !(shapeByPid.get(r.pid)?.hasChildren ?? false), onSelect: () => setCollapsed((p) => new Set(p).add(r.pid)) },
+                  ]),
+                  e,
+                )
+              }
             />
           )}
           {activeTab === "netscan" && (
@@ -329,6 +425,17 @@ export default function App() {
                 setSelectedOffset(r.offset);
               }}
               verdictOf={netVerdict}
+              highlights={highlights}
+              onRowContextMenu={(r, col, e) =>
+                openMenu(
+                  `${r.owner} · ${r.foreignAddr}:${r.foreignPort}`,
+                  baseMenu(`n${r.offset}`, r, col, netColumns, [
+                    { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
+                    { kind: "action", label: `Filter to ${r.foreignAddr}`, onSelect: () => setFilter(r.foreignAddr) },
+                  ]),
+                  e,
+                )
+              }
             />
           )}
           {activeTab === "malfind" && (
@@ -339,6 +446,17 @@ export default function App() {
               selectedKey={null}
               onSelect={(r) => setSelectedPid(r.pid)}
               verdictOf={malVerdict}
+              highlights={highlights}
+              onRowContextMenu={(r, col, e) =>
+                openMenu(
+                  `${r.process} · ${hex(r.start)}`,
+                  baseMenu(`m${r.pid}-${r.start}`, r, col, malColumns, [
+                    { kind: "action", label: "Dump this region", onSelect: () => undefined },
+                    { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
+                  ]),
+                  e,
+                )
+              }
             />
           )}
           {activeTab === "handles" && (
@@ -349,9 +467,20 @@ export default function App() {
               selectedKey={null}
               onSelect={(r) => setSelectedPid(r.pid)}
               verdictOf={() => "clean"}
+              highlights={highlights}
+              onRowContextMenu={(r, col, e) =>
+                openMenu(
+                  `${r.type} · ${r.process}`,
+                  baseMenu(`h${r.pid}-${r.handleValue}-${r.offset}`, r, col, handleColumns, [
+                    { kind: "action", label: `Show process ${r.pid} in the tree`, onSelect: () => { setActiveTab("pstree"); setSelectedPid(r.pid); } },
+                  ]),
+                  e,
+                )
+              }
             />
           )}
 
+          <Splitter height={inspectorH} onResize={setInspectorH} />
           <Inspector row={selectedProcess} onPivot={() => setActiveTab("handles")} />
         </div>
       </main>
@@ -362,8 +491,12 @@ export default function App() {
           contextAgeMs={18_400}
           symbolTable={image.symbolTable}
           totalRows={processes.length + connections.length + injections.length + streamed}
+          caseName={openCase.caseFile}
+          dirty={dirty}
         />
       </div>
+
+      <ContextMenu state={menu} onClose={() => setMenu(null)} />
     </div>
   );
 }
