@@ -1,0 +1,82 @@
+/*
+ * Design tokens.
+ *
+ * The rule that governs this palette: the interface is achromatic, verdicts are
+ * not. Selection, focus, hover and active states are all expressed in lightness
+ * alone. The only saturated pixels on screen belong to a finding. An analyst
+ * scanning forty thousand rows should be able to trust that colour means
+ * something, every time.
+ */
+
+:root {
+  /* ---- Surface scale (neutral, a hair warm so it doesn't read as "dark blue dashboard") */
+  --ink-1000: #0c0d0f; /* app background */
+  --ink-950: #101114; /* sunken / table body */
+  --ink-900: #14161a; /* panel */
+  --ink-850: #191c21; /* raised: toolbars, headers */
+  --ink-800: #1f2229; /* row selected, tab active */
+  --ink-750: #262a32; /* hover */
+  --ink-700: #2e323b; /* rule */
+  --ink-600: #3a3f4a; /* rule strong */
+  --ink-500: #575d69; /* disabled text */
+  --ink-400: #737a87; /* muted text */
+  --ink-300: #939ba8; /* secondary text */
+  --ink-200: #b6bdc8; /* body dim */
+  --ink-100: #d3d9e1; /* body */
+  --ink-000: #eef1f5; /* primary text, active affordance */
+
+  /* ---- Verdict. Reserved. Do not use these for chrome. */
+  --verdict-alert: #dd5c46;
+  --verdict-alert-dim: #4a221c;
+  --verdict-notice: #d0a03f;
+  --verdict-notice-dim: #423418;
+  --verdict-clean: #5b9c78;
+  --verdict-clean-dim: #1d332a;
+
+  /* ---- Type */
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-condensed: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --text-micro: 10px;   /* column headers, eyebrows */
+  --text-xs: 11px;      /* table body, dense metadata */
+  --text-sm: 12px;      /* nav, labels */
+  --text-base: 13px;    /* default UI */
+  --text-md: 15px;
+  --text-lg: 19px;
+
+  --tracking-eyebrow: 0.09em;
+  --tracking-tight: -0.011em;
+
+  /* ---- Space. 4px base. Dense by intent. */
+  --s-1: 2px;
+  --s-2: 4px;
+  --s-3: 6px;
+  --s-4: 8px;
+  --s-5: 12px;
+  --s-6: 16px;
+  --s-7: 20px;
+  --s-8: 24px;
+  --s-9: 32px;
+
+  /* ---- Structure */
+  --row-h: 24px;        /* table row. tuned so ~40 rows fit a laptop viewport */
+  --bar-h: 44px;        /* image bar */
+  --ribbon-h: 46px;
+  --nav-w: 232px;
+  --inspector-h: 232px;
+
+  --radius: 3px;
+
+  /* ---- Motion. Short, and only where it clarifies. */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 90ms;
+  --dur: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur: 0ms;
+  }
+}
