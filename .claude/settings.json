@@ -1,0 +1,17 @@
+{
+  "extraKnownMarketplaces": {
+    "my-skills": {
+      "source": {
+        "source": "github",
+        "repo": "LimSeongHyeon/Skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "core@my-skills": true,
+    "design@my-skills": true,
+    "frontend@my-skills": true,
+    "test@my-skills": true,
+    "tone@my-skills": true
+  }
+}

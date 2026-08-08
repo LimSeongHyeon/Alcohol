@@ -1,0 +1,188 @@
+# ==============================================================================
+# Forensic evidence — NEVER commit
+# ==============================================================================
+# Memory images and captures contain live secrets, credentials, private keys and
+# personal data from whoever's machine they came from. A public repository is the
+# worst possible place for them. Keep evidence outside the working tree entirely;
+# these patterns are a safety net, not a filing system.
+
+# Raw / physical memory images
+*.raw
+*.mem
+*.dmp
+*.dump
+*.lime
+*.avml
+*.core
+*.crash
+*.bin
+*.img
+*.dd
+*.001
+
+# Hypervisor memory and suspend state
+*.vmem
+*.vmss
+*.vmsn
+*.vmsd
+*.vsv
+*.sav
+*.vhd
+*.vhdx
+*.qcow2
+
+# Forensic container formats
+*.E01
+*.Ex01
+*.aff4
+*.hpak
+*.s01
+
+# Hibernation and pagefile
+hiberfil.sys
+pagefile.sys
+swapfile.sys
+
+# Conventional evidence and output directories
+evidence/
+samples/
+dumps/
+captures/
+output/
+artifacts/
+
+# Volatility plugin output (dumpfiles, memmap, procdump, ...)
+file.*.dat
+file.*.img
+pid.*.dmp
+
+# ==============================================================================
+# Volatility 3 caches and symbol tables
+# ==============================================================================
+# ISF symbol files are large and are downloaded on demand. The identifier cache
+# is machine-local and records paths from the analyst's own filesystem.
+.cache/
+*.isf.json
+*.isf.json.xz
+identifier.cache
+symbols/
+!src/**/symbols/
+
+# ==============================================================================
+# Python (Volatility daemon / sidecar)
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+.installed.cfg
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.hypothesis/
+
+# ==============================================================================
+# Node / Vite / React
+# ==============================================================================
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+*.tsbuildinfo
+.eslintcache
+.npm/
+.pnpm-store/
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/versions
+.pnp.*
+
+# ==============================================================================
+# Rust / Tauri
+# ==============================================================================
+target/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/WixTools/
+src-tauri/.tauri/
+**/*.rs.bk
+*.pdb
+
+# ==============================================================================
+# Secrets and local configuration
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+!**/*.public.key
+secrets.json
+credentials.json
+*.local
+
+# Tauri code-signing material
+*.tauri-key
+tauri-private.key
+tauri-private.key.pub
+
+# ==============================================================================
+# Claude Code — commit shared config, ignore local overrides
+# ==============================================================================
+.claude/settings.local.json
+.claude/history/
+.claude/todos/
+.claude/shell-snapshots/
+.claude/statsig/
+.claude/troubleshooting/
+
+# ==============================================================================
+# Editors and OS
+# ==============================================================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ==============================================================================
+# Logs and scratch
+# ==============================================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+tmp/
+temp/
+scratch/

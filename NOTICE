@@ -1,0 +1,24 @@
+Alcohol
+Copyright 2026 Lim Seonghyeon
+
+This product is licensed under the Volatility Software License, Version 1.0.
+See the LICENSE file for the full text, or:
+https://www.volatilityfoundation.org/license/vsl-v1.0
+
+-------------------------------------------------------------------------------
+
+This product is designed to execute Volatility 3 and parse its results.
+
+  Volatility 3
+  Copyright 2019 Volatility Foundation
+  https://github.com/volatilityfoundation/volatility3
+  Licensed under the Volatility Software License, Version 1.0
+
+Under the "Copyleft" section of that license, software written to execute
+Volatility and parse its results is an "Addition", and must be published in
+full under the same license. This repository is that publication.
+
+Alcohol is not affiliated with or endorsed by the Volatility Foundation.
+The Volatility Software License grants no rights to any trademarks or service
+marks; the name "Volatility" is used here only to identify the upstream
+software this product interoperates with.
