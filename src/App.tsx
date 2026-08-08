@@ -189,14 +189,14 @@ export default function App() {
 
   const ribbonCaption =
     activeTab === "malfind"
-      ? "malfind reports virtual addresses — not plottable here"
+      ? "malfind reports virtual addresses, not plottable here"
       : `${activeTab} · ${count(ribbonMarks.length)} marks`;
 
   /**
    * Shared menu tail: highlight swatches, then copy and filter actions.
    *
    * Everything here acts on the whole selection. Single-row actions built from
-   * the clicked cell only appear when exactly one row is selected — "filter by
+   * the clicked cell only appear when exactly one row is selected. "Filter rows by
    * this value" is meaningless when the analyst has twelve rows marked.
    */
   function baseMenu<T>(
@@ -273,11 +273,11 @@ export default function App() {
     // pstree does not carry the command line; the GUI joins it in, because
     // "what was it launched with" is the next question in every case and the
     // CLI makes you run a second plugin to answer it.
-    { key: "cmdline", header: "Command line", width: 0, render: (r) => <span className="td-mono td-dim">{r.cmdline ?? "—"}</span>, text: (r) => r.cmdline ?? "" },
+    { key: "cmdline", header: "Command line", width: 0, render: (r) => <span className="td-mono td-dim">{r.cmdline ?? "-"}</span>, text: (r) => r.cmdline ?? "" },
     { key: "offset", header: "Offset(P)", width: 118, render: (r) => <span className="td-mono">{hex(r.offset)}</span>, text: (r) => hex(r.offset) },
     { key: "threads", header: "Thr", width: 54, align: "right", render: (r) => <span className="td-mono">{r.threads}</span>, text: (r) => String(r.threads) },
-    { key: "handles", header: "Hnd", width: 62, align: "right", render: (r) => <span className="td-mono">{r.handles ?? "—"}</span>, text: (r) => String(r.handles ?? "") },
-    { key: "sess", header: "Sess", width: 54, align: "right", render: (r) => <span className="td-mono">{r.sessionId ?? "—"}</span>, text: (r) => String(r.sessionId ?? "") },
+    { key: "handles", header: "Hnd", width: 62, align: "right", render: (r) => <span className="td-mono">{r.handles ?? "-"}</span>, text: (r) => String(r.handles ?? "") },
+    { key: "sess", header: "Sess", width: 54, align: "right", render: (r) => <span className="td-mono">{r.sessionId ?? "-"}</span>, text: (r) => String(r.sessionId ?? "") },
     { key: "start", header: "Started", width: 82, render: (r) => <span className="td-mono">{clock(r.createTime)}</span>, text: (r) => r.createTime },
   ];
 
@@ -286,12 +286,12 @@ export default function App() {
     { key: "local", header: "Local address", width: 146, render: (r) => <span className="td-mono">{r.localAddr}</span>, text: (r) => r.localAddr },
     { key: "lport", header: "Port", width: 62, align: "right", render: (r) => <span className="td-mono td-strong">{r.localPort}</span>, text: (r) => String(r.localPort) },
     { key: "foreign", header: "Foreign address", width: 146, render: (r) => <span className="td-mono td-strong">{r.foreignAddr}</span>, text: (r) => r.foreignAddr },
-    { key: "fport", header: "Port", width: 62, align: "right", render: (r) => <span className="td-mono">{r.foreignPort || "—"}</span>, text: (r) => String(r.foreignPort) },
-    { key: "state", header: "State", width: 118, render: (r) => <span className="td-mono">{r.state || "—"}</span>, text: (r) => r.state },
+    { key: "fport", header: "Port", width: 62, align: "right", render: (r) => <span className="td-mono">{r.foreignPort || "-"}</span>, text: (r) => String(r.foreignPort) },
+    { key: "state", header: "State", width: 118, render: (r) => <span className="td-mono">{r.state || "-"}</span>, text: (r) => r.state },
     { key: "pid", header: "PID", width: 62, align: "right", render: (r) => <span className="td-mono">{r.pid}</span>, text: (r) => String(r.pid) },
     { key: "owner", header: "Owner", width: 182, render: (r) => r.owner, text: (r) => r.owner },
     { key: "offset", header: "Offset(P)", width: 126, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span>, text: (r) => hex(r.offset) },
-    { key: "created", header: "Created", width: 82, render: (r) => <span className="td-mono td-dim">{r.created ? clock(r.created) : "—"}</span>, text: (r) => r.created ?? "" },
+    { key: "created", header: "Created", width: 82, render: (r) => <span className="td-mono td-dim">{r.created ? clock(r.created) : "-"}</span>, text: (r) => r.created ?? "" },
     { key: "pad", header: "", width: 0, render: () => null },
   ];
 
@@ -314,7 +314,7 @@ export default function App() {
     { key: "handle", header: "Handle", width: 80, align: "right", render: (r) => <span className="td-mono">{hex(r.handleValue)}</span>, text: (r) => hex(r.handleValue) },
     { key: "type", header: "Type", width: 128, render: (r) => r.type, text: (r) => r.type },
     { key: "access", header: "Access", width: 92, render: (r) => <span className="td-mono td-dim">{hex(r.grantedAccess)}</span>, text: (r) => hex(r.grantedAccess) },
-    { key: "name", header: "Name", width: 0, render: (r) => <span className="td-mono">{r.name || "—"}</span>, text: (r) => r.name },
+    { key: "name", header: "Name", width: 0, render: (r) => <span className="td-mono">{r.name || "-"}</span>, text: (r) => r.name },
   ];
 
   if (!openCase) {
@@ -386,7 +386,7 @@ export default function App() {
                   <span className="tab-name">{t.label}</span>
                   <span className="tab-count">{count(t.key === "handles" ? streamed : t.total)}</span>
                   {alerts > 0 && <span className="tab-alerts">{alerts}</span>}
-                  {t.cached && <span className="tab-cached" title="Loaded from the case file — not re-run">cached</span>}
+                  {t.cached && <span className="tab-cached" title="Loaded from the case file, not re-run">cached</span>}
                 </button>
               );
             })}

@@ -47,7 +47,7 @@ export function Inspector({
         </div>
 
         <span className="eyebrow">Command line</span>
-        <div className="inspector-cmd">{row.cmdline ?? "—"}</div>
+        <div className="inspector-cmd">{row.cmdline ?? "-"}</div>
 
         {decoded && (
           <div className="inspector-decoded">
@@ -65,15 +65,15 @@ export function Inspector({
         </div>
 
         {/* Reference detail sits last. On a short screen the inspector scrolls,
-            and what must survive above the fold is the evidence — the command
-            line and whatever it decodes to — not the thread count. */}
+            and what must survive above the fold is the evidence, the command
+            line and whatever it decodes to, not the thread count. */}
         <Meta
           items={[
             ["threads", String(row.threads)],
-            ["handles", row.handles === null ? "—" : String(row.handles)],
-            ["session", row.sessionId === null ? "—" : String(row.sessionId)],
+            ["handles", row.handles === null ? "-" : String(row.handles)],
+            ["session", row.sessionId === null ? "-" : String(row.sessionId)],
             ["started", clock(row.createTime)],
-            ["exited", row.exitTime ? clock(row.exitTime) : "—"],
+            ["exited", row.exitTime ? clock(row.exitTime) : "-"],
             ["wow64", row.wow64 ? "yes" : "no"],
             ["list walk", row.listWalkVisible ? "present" : "absent"],
             ["pool scan", row.poolScanVisible ? "present" : "absent"],
@@ -87,7 +87,7 @@ export function Inspector({
         </span>
         {row.findings.length === 0 ? (
           <p className="finding-detail" style={{ marginTop: 8 }}>
-            Nothing flagged. Absence of a finding is not evidence of absence — it means no check that ran had
+            Nothing flagged. Absence of a finding is not evidence of absence. It means no check that ran had
             an opinion about this row.
           </p>
         ) : (

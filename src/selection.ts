@@ -1,7 +1,7 @@
 /**
  * Table selection.
  *
- * `primary` is the row the inspector follows — the last one touched, which is
+ * `primary` is the row the inspector follows: the last one touched, which is
  * not necessarily the last one in the range. `anchor` is where a Shift range
  * measures from, and it deliberately survives a Shift-click so that dragging a
  * range wider or narrower pivots around the same point, the way every file

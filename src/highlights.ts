@@ -2,7 +2,7 @@
  * Analyst-applied row marking.
  *
  * Distinct from a verdict: a verdict is the tool's observation, a highlight is
- * the analyst's. Five is deliberate — enough to separate threads of an
+ * the analyst's. Five is deliberate: enough to separate threads of an
  * investigation ("attacker processes", "already ruled out", "ask the client"),
  * few enough that the meanings stay in the analyst's head.
  */

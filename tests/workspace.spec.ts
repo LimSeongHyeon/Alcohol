@@ -18,7 +18,7 @@ async function workspace(page: Page) {
 /**
  * Addresses a row by its position in the data, not its position in the DOM.
  * The table is virtualised with overscan, so `.tr` includes rows rendered
- * outside the viewport — `nth()` picks one of those, Playwright scrolls it into
+ * outside the viewport, and `nth()` picks one of those, Playwright scrolls it into
  * view to click it, and the window shifts under the next locator.
  */
 const row = (page: Page, index: number) => page.locator(`.tr[aria-rowindex="${index}"]`);
@@ -43,26 +43,26 @@ test("open screen", async ({ page }, info) => {
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-00-open.png`, fullPage: true });
 });
 
-test("workspace — process tree", async ({ page }, info) => {
+test("workspace: process tree", async ({ page }, info) => {
   await workspace(page);
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-01-pstree.png` });
 });
 
-test("workspace — network artifacts", async ({ page }, info) => {
+test("workspace: network artifacts", async ({ page }, info) => {
   await workspace(page);
   await page.getByRole("tab", { name: /netscan/ }).click();
   await expect(page.locator(".tr").first()).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-02-netscan.png` });
 });
 
-test("workspace — injected memory", async ({ page }, info) => {
+test("workspace: injected memory", async ({ page }, info) => {
   await workspace(page);
   await page.getByRole("tab", { name: /malfind/ }).click();
   await expect(page.locator(".tr").first()).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-03-malfind.png` });
 });
 
-test("workspace — handles, mid-stream", async ({ page }, info) => {
+test("workspace: handles, mid-stream", async ({ page }, info) => {
   await workspace(page);
   await page.getByRole("tab", { name: /handles/ }).click();
   await expect(page.locator(".tab-spinner")).toBeVisible();
@@ -71,7 +71,7 @@ test("workspace — handles, mid-stream", async ({ page }, info) => {
 
 test("ribbon detail", async ({ page }, info) => {
   await workspace(page);
-  // The substrate must actually be drawn — it is what stops the field reading
+  // The substrate must actually be drawn: it is what stops the field reading
   // as empty when a result set clusters into a few pixels.
   expect(await page.locator(".ribbon-context").count()).toBeGreaterThan(500);
   await expect(page.locator(".ribbon-cursor")).toBeVisible();
@@ -79,7 +79,7 @@ test("ribbon detail", async ({ page }, info) => {
   await page.locator(".ribbon").screenshot({ path: `${SHOTS}/${info.project.name}-12-ribbon.png` });
 });
 
-test("nav — unavailable plugins stay visible", async ({ page }, info) => {
+test("nav: unavailable plugins stay visible", async ({ page }, info) => {
   await workspace(page);
   await page.locator(".nav-input").fill("dump");
   await expect(page.locator(".nav-item:disabled")).toHaveCount(3);

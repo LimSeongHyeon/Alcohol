@@ -2,7 +2,7 @@
  * Tree geometry for a flat, pre-ordered list of rows carrying a depth.
  *
  * Volatility's pstree emits exactly that shape, so the UI never builds a nested
- * structure — it computes where the connector lines go and draws them.
+ * structure. It computes where the connector lines go and draws them.
  */
 
 export interface TreeShape {
@@ -33,7 +33,7 @@ export function computeTree(depths: number[]): TreeShape[] {
 
   const out: TreeShape[] = [];
   // stack[L] answers "does the ancestor occupying level L have siblings still to
-  // come?" — which is exactly when a vertical line must pass through column L.
+  // come?", which is exactly when a vertical line must pass through column L.
   const stack: boolean[] = [];
   for (let i = 0; i < n; i++) {
     const d = depths[i] ?? 0;

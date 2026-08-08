@@ -32,7 +32,7 @@
    *
    *   --ink-500  4.9:1   --ink-400  6.6:1   --ink-300  9.0:1
    */
-  --ink-500: #7b828e; /* disabled text — still legible, by requirement */
+  --ink-500: #7b828e; /* disabled text, still legible by requirement */
   --ink-400: #949ba7; /* muted: column headers, metadata, ticks */
   --ink-300: #adb4bf; /* secondary text */
   --ink-200: #c2c8d1; /* body dim */
@@ -71,7 +71,7 @@
 
   --text-micro: 11px;   /* column headers, eyebrows */
   --text-xs: 12px;      /* dense secondary metadata */
-  --text-sm: 13px;      /* table body, nav — the size most of the app is read at */
+  --text-sm: 13px;      /* table body and nav. The size most of the app is read at */
   --text-base: 14px;    /* default UI */
   --text-md: 17px;
   --text-lg: 22px;
@@ -114,8 +114,8 @@
  * Short screens.
  *
  * On a 1440x900 workstation the ribbon can afford to be the landmark it is. On
- * a 720p laptop the fixed chrome was taking 44% of the viewport and the table —
- * the actual product — was down to seven rows. The instrument gives way to the
+ * a 720p laptop the fixed chrome was taking 44% of the viewport and the table,
+ * the actual product, was down to seven rows. The instrument gives way to the
  * data rather than the other way round.
  */
 @media (max-height: 820px) {

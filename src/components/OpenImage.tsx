@@ -18,7 +18,7 @@ export interface RecentCase {
  *
  * A memory image is evidence: eight gigabytes that must not be copied, moved,
  * or altered. The tool records a path and a hash and reads in place. That rules
- * out the browser's file input, which hands over bytes and hides the path —
+ * out the browser's file input, which hands over bytes and hides the path.
  * Tauri's native dialog returns the path, and this screen is built for that.
  * In the browser demo the two buttons below are theatre.
  */
@@ -56,7 +56,7 @@ export function OpenImage({
         >
           <p className="open-dropline">Drop a memory image here</p>
           <p className="open-dropnote">
-            raw · lime · dmp · vmem · core · E01 — read in place, never copied
+            raw · lime · dmp · vmem · core · E01 (read in place, never copied)
           </p>
           <div className="open-actions">
             <button className="btn btn-primary" onClick={onOpenImage}>
@@ -91,7 +91,7 @@ export function OpenImage({
             ))}
           </ul>
           <p className="open-note">
-            A case stores results, highlights and notes — not the image. Reopening one skips the
+            A case stores results, highlights and notes, not the image. Reopening one skips the
             plugins that have already run.
           </p>
         </section>

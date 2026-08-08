@@ -94,8 +94,8 @@ Three fields exist to stop the cache from lying:
   stored columns disagree with the installed plugin must surface that, not
   quietly render rows against the wrong headers.
 - **`provenance.volatility`** records who produced the rows. If the installed
-  version differs, the result is still shown — it was true when it was
-  produced — but labelled with the version that produced it. The analyst decides
+  version differs, the result is still shown, because it was true when it was
+  produced, but it is labelled with the version that produced it. The analyst decides
   whether to re-run.
 - **`complete`** is false for a run that was cancelled or interrupted. A partial
   result is worth keeping and must never be mistaken for a full one.
@@ -120,8 +120,8 @@ stated.
 ```
 
 Keys are row keys, not row indices. A row key is derived from the row's own
-natural identity — the PID for a process, the pool offset for a scanned
-object — so a highlight stays attached to the right row after filtering,
+natural identity (the PID for a process, the pool offset for a scanned
+object) so a highlight stays attached to the right row after filtering,
 sorting, collapsing, or a re-run that returns rows in a different order. Indices
 would silently reattach a mark to a different process, which in a forensics tool
 is worse than losing it.
@@ -135,6 +135,6 @@ major bump.
 
 ## Status
 
-Designed, not built. The UI surfaces it — the case picker, the `cached` badges
-on tabs, the unsaved-changes dot — against fixtures. Writing and reading the
+Designed, not built. The UI surfaces it (the case picker, the `cached` badges
+on tabs, the unsaved-changes dot) against fixtures. Writing and reading the
 archive belongs to M2, alongside the daemon that produces the rows.

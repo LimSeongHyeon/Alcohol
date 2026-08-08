@@ -1,7 +1,7 @@
 import type { Phase, PluginEntry } from "../types";
 
 /**
- * Steps 1–6 are the SANS memory-forensics methodology. They are numbered
+ * Steps 1 to 6 are the SANS memory-forensics methodology. They are numbered
  * because they are genuinely ordered: you cannot judge an injected region
  * before you know which processes are real. The groups after them are
  * reference material an analyst dips into, so they carry no number.
@@ -71,12 +71,12 @@ const p = (
  *
  * `pycryptodome` is deliberately shown as missing here to exercise the
  * unavailable state: the entries stay in the list, greyed and labelled. A
- * forensics tool must never let a plugin disappear silently — an analyst who
+ * forensics tool must never let a plugin disappear silently. An analyst who
  * cannot find `hashdump` should learn that a dependency is missing, not
  * conclude there were no credentials to find.
  */
 export const plugins: PluginEntry[] = [
-  // 1 — Identify
+  // 1. Identify
   p("windows.info.Info", "OS build, kernel base, DTB and processor layout", "identify"),
   p("windows.pslist.PsList", "Walks the active process list", "identify"),
   p("windows.pstree.PsTree", "Parent-child hierarchy of the active list", "identify"),
@@ -84,7 +84,7 @@ export const plugins: PluginEntry[] = [
   p("windows.malware.psxview.PsXView", "Cross-references every process source", "identify"),
   p("windows.sessions.Sessions", "Maps processes to logon sessions", "identify"),
 
-  // 2 — Objects
+  // 2. Objects
   p("windows.cmdline.CmdLine", "Full command line per process", "objects", true),
   p("windows.dlllist.DllList", "Loaded modules and their load paths", "objects", true),
   p("windows.handles.Handles", "Open handles by type and granted access", "objects", true),
@@ -93,11 +93,11 @@ export const plugins: PluginEntry[] = [
   p("windows.envars.Envars", "Process environment variables", "objects", true),
   p("windows.vadinfo.VadInfo", "Virtual address descriptors and protections", "objects", true),
 
-  // 3 — Network
+  // 3. Network
   p("windows.netscan.NetScan", "Pool-scans for connections and listeners", "network"),
   p("windows.netstat.NetStat", "Walks the network tracking structures", "network"),
 
-  // 4 — Injection
+  // 4. Injection
   p("windows.malware.malfind.Malfind", "Private, executable, unbacked memory", "injection", true),
   p("windows.malware.ldrmodules.LdrModules", "Modules missing from a PEB list", "injection", true),
   p("windows.malware.hollowprocesses.HollowProcesses", "PEB image mismatched against the VAD", "injection", true),
@@ -105,7 +105,7 @@ export const plugins: PluginEntry[] = [
   p("windows.malware.processghosting.ProcessGhosting", "Backing file deleted or detached", "injection"),
   p("windows.malware.suspicious_threads.SuspiciousThreads", "Threads starting outside a mapped image", "injection", true),
 
-  // 5 — Rootkit
+  // 5. Rootkit
   p("windows.ssdt.SSDT", "System call table and its owning modules", "rootkit"),
   p("windows.callbacks.Callbacks", "Kernel notification routines", "rootkit"),
   p("windows.modules.Modules", "Walks the loaded kernel module list", "rootkit"),
@@ -115,7 +115,7 @@ export const plugins: PluginEntry[] = [
   p("windows.malware.svcdiff.SvcDiff", "Services by list walk versus by scan", "rootkit"),
   p("windows.malware.unhooked_system_calls.UnhookedSystemCalls", "ntdll stubs differing from disk", "rootkit"),
 
-  // 6 — Extract
+  // 6. Extract
   p("windows.pedump.PEDump", "Carve a PE image from an address", "extract", true),
   p("windows.dumpfiles.DumpFiles", "Write cached file contents to disk", "extract", true),
   p("windows.memmap.Memmap", "Dump a process address space", "extract", true),
@@ -132,7 +132,7 @@ export const plugins: PluginEntry[] = [
   // Timeline
   p("timeliner.Timeliner", "Every time-bearing plugin, merged and ordered", "timeline"),
 
-  // Credentials — gated behind a dependency, on purpose
+  // Credentials. Gated behind a dependency, on purpose.
   p("windows.registry.hashdump.Hashdump", "Local account password hashes", "credentials", false, {
     reason: "Requires pycryptodome",
     missingModule: "Crypto",

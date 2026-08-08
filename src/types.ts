@@ -28,7 +28,7 @@ export interface ProcessRow {
   path: string | null;
   findings: Finding[];
   /** True when the process was recovered by scanning but is absent from the
-   *  active process list — the classic unlinking signal. */
+   *  active process list, the classic unlinking signal. */
   listWalkVisible: boolean;
   poolScanVisible: boolean;
 }
@@ -72,7 +72,7 @@ export interface HandleRow {
 }
 
 /** The six numbered phases are the SANS memory-forensics methodology, which is
- *  a genuine sequence — an analyst works down it. The unnumbered groups below
+ *  a genuine sequence: an analyst works down it. The unnumbered groups below
  *  are supplementary and have no inherent order. */
 export type PhaseId =
   | "identify"
@@ -104,7 +104,7 @@ export interface PluginEntry {
   /** Accepts --pid, so it can be launched from a selected process. */
   processScoped: boolean;
   /** Set when the plugin could not be loaded. The entry stays visible and
-   *  disabled — never hidden. A missing plugin must not read as an empty result. */
+   *  disabled, never hidden. A missing plugin must not read as an empty result. */
   unavailable: { reason: string; missingModule: string } | null;
   /** Populated once the plugin has been run in this session. */
   run: { rows: number; elapsedMs: number; alerts: number } | null;
@@ -119,7 +119,7 @@ export interface ResultTab {
   state: RunState;
   rowCount: number;
   elapsedMs: number;
-  /** 0–1, or null when the plugin cannot report determinate progress. */
+  /** 0 to 1, or null when the plugin cannot report determinate progress. */
   progress: number | null;
   alerts: number;
 }

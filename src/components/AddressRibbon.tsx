@@ -20,7 +20,7 @@ export interface RibbonMark {
  * the image, so "where did this come from" is answered without hex arithmetic.
  *
  * An earlier version binned all known offsets into a density histogram. It
- * looked like a barcode and said nothing — log scaling flattened every bucket
+ * looked like a barcode and said nothing. Log scaling flattened every bucket
  * to the same height, and the marks that mattered were lost in the grey. One
  * mark per row is less ink and far more information: the unlinked process
  * sitting alone at 0x11f000000, far from every other allocation, is visible
@@ -44,7 +44,7 @@ export function AddressRibbon({
    * Every offset the session has recovered, from any plugin. Drawn faintly
    * behind the active result so the bright marks are read against where memory
    * structures actually live, instead of against nothing. Without it the field
-   * is mostly empty air — sixteen connections cluster into three pixels and the
+   * is mostly empty air: sixteen connections cluster into three pixels and the
    * instrument looks broken rather than sparse.
    */
   context: number[];

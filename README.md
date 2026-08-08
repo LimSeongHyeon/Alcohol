@@ -36,7 +36,7 @@ VSL v1.0의 `Copyleft` 조항이 "Additions"를 이렇게 정의하거든요:
 
 > "Additions" also includes any software designed to execute the software and parse its results, such as a wrapper written for the software, but does not include shell or execution menu software designed to execute software generally.
 
-Alcohol은 Volatility 3를 실행하고 그 결과를 파싱하는 소프트웨어입니다. 정확히 wrapper고, 따라서 Addition입니다. 별도 프로세스로 분리해 호출하든 라이브러리로 링크하든 결과는 같습니다 — 라이선스 문언이 링크 방식을 구분하지 않으니까요. 예외로 적힌 "범용 실행 셸/메뉴"에도 해당하지 않습니다. Alcohol은 Volatility 전용 GUI지 아무 프로그램이나 돌려주는 런처가 아니에요.
+Alcohol은 Volatility 3를 실행하고 그 결과를 파싱하는 소프트웨어입니다. 정확히 wrapper고, 따라서 Addition입니다. 별도 프로세스로 분리해 호출하든 라이브러리로 링크하든 결과는 같습니다. 라이선스 문언이 링크 방식을 구분하지 않으니까요. 예외로 적힌 "범용 실행 셸/메뉴"에도 해당하지 않습니다. Alcohol은 Volatility 전용 GUI지 아무 프로그램이나 돌려주는 런처가 아니에요.
 
 그래서 VSL이 요구하는 대로 전체 소스를 공개 저장소로 배포합니다.
 
@@ -61,7 +61,7 @@ VSL은 상표권을 넘기지 않습니다 (`Trademarks: This license grants you
 
 ## 참고할 만한 프로젝트
 
-- [VolWeb](https://github.com/k1nd0ne/VolWeb) — 웹 기반 협업 포렌식 플랫폼 (GPL-3.0)
-- [Orochi](https://github.com/LDO-CERT/orochi) — 분산 메모리 포렌식 (MIT)
+- [VolWeb](https://github.com/k1nd0ne/VolWeb) · 웹 기반 협업 포렌식 플랫폼 (GPL-3.0)
+- [Orochi](https://github.com/LDO-CERT/orochi) · 분산 메모리 포렌식 (MIT)
 
 두 프로젝트 모두 VSL이 아닌 라이선스로 배포 중입니다. VSL의 Addition 조항을 문자 그대로 읽으면 VSL이어야 한다고 보고, Alcohol은 그쪽을 택했습니다.

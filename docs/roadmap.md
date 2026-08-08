@@ -3,12 +3,12 @@
 Ordered by dependency, not by ambition. Each milestone should leave the project
 in a state where the next one can be evaluated honestly.
 
-## M0 — Repository ✅
+## M0: Repository ✅
 
 Licence, notices, contribution rules, branch strategy, commit hygiene for a
 public forensics repository.
 
-## M1 — Demo screen ✅
+## M1: Demo screen ✅
 
 The analysis workspace running against fixtures: image bar, address ribbon,
 phase-grouped plugin navigator, virtualised result tables, process inspector,
@@ -22,7 +22,7 @@ a resizable inspector, drawn tree connectors, and a type scale that survives
 being read for an afternoon. The `.alcohol` container is specified in
 [case-file.md](case-file.md) but not yet written or read.
 
-## M2 — Daemon and first real result
+## M2: Daemon and first real result
 
 The point at which the tool does something true.
 
@@ -37,28 +37,28 @@ The point at which the tool does something true.
 Exit criterion: opening an image and running two plugins with no `vol.py`
 subprocess anywhere, and the second plugin visibly cheaper than the first.
 
-## M3 — Tauri shell
+## M3: Tauri shell
 
 - Window, native file dialog, sidecar packaging and supervision
 - Daemon lifecycle tied to the window, orphan cleanup on crash
 - `LICENSE` and `NOTICE` bundled into every artifact the packager emits
 
-## M4 — Streaming and cancellation
+## M4: Streaming and cancellation
 
 - Row batching with backpressure
 - Cancel that actually unwinds the generator rather than orphaning a worker
 - Progress from Volatility's own `progress_callback`
-- A long scanning plugin — `windows.filescan` or `windows.handles` — as the
+- A long scanning plugin, `windows.filescan` or `windows.handles`, as the
   proving case
 
-## M5 — Full plugin surface
+## M5: Full plugin surface
 
 - All 197 plugins, argument forms generated from each plugin's
   `get_requirements()`
 - Process-scoped plugins launchable from the inspector
 - Unavailable plugins disabled with their missing dependency named
 
-## M6 — Comparison
+## M6: Comparison
 
 The feature the CLI cannot offer, and the reason cross-referencing was called
 out in the research.
@@ -68,17 +68,17 @@ out in the research.
   `svcscan`
 - Comparison across two images of the same host
 
-## M7 — Timeline
+## M7: Timeline
 
 - `timeliner` output on a zoomable axis
 - Selection in the timeline filters the open result tabs
 
-## M8 — Case and reporting
+## M8: Case and reporting
 
 - Persist a session: image identity, plugin runs, selections, analyst notes
 - Export findings with the offsets and plugin invocations that produced them, so
   a reader can reproduce them from the CLI
-- Never write evidence into the case file — record paths and hashes
+- Never write evidence into the case file. Record paths and hashes
 
 ## Deliberately out of scope
 

@@ -45,7 +45,7 @@ export function ImageBar({
 
       {/* Five facts, not nine. Eight of them squeezed the file name out of the
           bar entirely at 1280px, which is the one thing here that must never
-          disappear. DTB, kernel base and processor count are internals — they
+          disappear. DTB, kernel base and processor count are internals. They
           live in the windows.info result, a click away. What stays is what
           identifies the evidence. */}
       <div className="imagebar-facts">

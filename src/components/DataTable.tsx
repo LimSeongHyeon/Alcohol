@@ -62,7 +62,7 @@ export function DataTable<T>({
   const primaryIndex = selection.primary === null ? -1 : orderedKeys.indexOf(selection.primary);
 
   // Key events can arrive faster than React re-renders, and several will then
-  // share one render's index — hold an arrow key and the extra presses vanish.
+  // share one render's index: hold an arrow key and the extra presses vanish.
   // The anchor advances synchronously so each event moves from where the last
   // one landed, and resyncs whenever selection changes elsewhere.
   const cursor = useRef(primaryIndex);

@@ -80,7 +80,7 @@ const seeds: Seed[] = [
     cmd: "rundll32.exe",
     path: SYS32 + "rundll32.exe",
     findings: [
-      alert("Executable private memory", "0x1f0000–0x1f8fff is PAGE_EXECUTE_READWRITE, private, and has no backing file."),
+      alert("Executable private memory", "0x1f0000 to 0x1f8fff is PAGE_EXECUTE_READWRITE, private, and has no backing file."),
       alert("No command line arguments", "rundll32.exe launched with no DLL or entry point. Consistent with a hollowed host."),
     ],
   },

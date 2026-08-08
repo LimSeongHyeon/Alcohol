@@ -1,7 +1,7 @@
 # How analysts actually work, and what that means for the UI
 
 This document records the research behind the interface's information
-architecture. It is not a survey of everything Volatility can do — it is an
+architecture. It is not a survey of everything Volatility can do. It is an
 account of what practitioners reach for, in what order, and what that demands
 of a GUI.
 
@@ -11,12 +11,12 @@ Memory analysis in incident response follows the six-step method taught in SANS
 FOR508. Every cheat sheet, blog post and training course found during this
 research organises around it, explicitly or not:
 
-1. **Identify rogue processes** — what was running, and what is hiding
-2. **Analyse process objects** — DLLs, handles, tokens, command lines
-3. **Review network artifacts** — connections and their owners
-4. **Look for evidence of code injection** — executable memory with no file behind it
-5. **Check for signs of a rootkit** — hooks, unlinked modules, tampered tables
-6. **Dump suspicious processes and drivers** — carve artifacts for further analysis
+1. **Identify rogue processes**: what was running, and what is hiding
+2. **Analyse process objects**: DLLs, handles, tokens, command lines
+3. **Review network artifacts**: connections and their owners
+4. **Look for evidence of code injection**: executable memory with no file behind it
+5. **Check for signs of a rootkit**: hooks, unlinked modules, tampered tables
+6. **Dump suspicious processes and drivers**: carve artifacts for further analysis
 
 This ordering is not arbitrary and it is not decorative. It is a dependency
 chain: you cannot judge whether an executable memory region is suspicious until
@@ -25,8 +25,8 @@ know what is suspicious.
 
 **Consequence for the UI.** The plugin navigator is grouped by these six phases
 and the groups are numbered, because the sequence carries information the
-analyst needs. Supplementary groups — registry, timeline, credentials, pattern
-scanning — are listed after, unnumbered, because they have no inherent order.
+analyst needs. Supplementary groups (registry, timeline, credentials, pattern
+scanning) are listed after, unnumbered, because they have no inherent order.
 
 Alphabetical or namespace-based grouping was rejected. `windows.malware.malfind`
 and `windows.malware.ldrmodules` sit next to each other in the namespace and
@@ -42,7 +42,7 @@ instead of around the job.
 The oldest reliable trick in memory forensics is comparing two ways of finding
 the same thing. `pslist` walks `ActiveProcessLinks`; `psscan` pool-scans for
 `_EPROCESS` structures. A process present in the scan but absent from the walk
-has been unlinked — the classic direct kernel object manipulation signal.
+has been unlinked, the classic direct kernel object manipulation signal.
 `psxview` exists solely to automate that comparison across seven sources, and
 `svcdiff` does the same for services.
 
@@ -60,7 +60,7 @@ reflectively loaded modules, `handles` for what it had open, `malfind` for
 injected regions, `vadinfo` for the memory map, `privileges` for what it could
 do.
 
-The CLI makes this laborious — each step is a fresh command with a repeated
+The CLI makes this laborious: each step is a fresh command with a repeated
 `--pid`. Worse, with a subprocess-per-invocation design each one re-pays the
 framework startup and symbol loading cost.
 
@@ -78,7 +78,7 @@ Across the practitioner sources, triage converges on a small set:
 | --- | --- |
 | `windows.info` | Is this image even parseable, and what is it |
 | `windows.pstree` | What was running, and what spawned what |
-| `windows.cmdline` | How was it launched — encoded PowerShell, LOLBins |
+| `windows.cmdline` | How was it launched: encoded PowerShell, LOLBins |
 | `windows.netscan` | Who was talking to whom |
 | `windows.malware.malfind` | Executable private memory |
 
@@ -106,7 +106,7 @@ whose imports fail. Measured on a clean interpreter:
 | `+ yara-python` | 191 |
 | `+ pycryptodome` | 197 |
 
-Missing `pefile` alone removes `windows.netscan` — one of the five triage
+Missing `pefile` alone removes `windows.netscan`, one of the five triage
 plugins above. An analyst who opens the network phase, finds nothing there, and
 concludes the host had no connections has been actively misled by the tool.
 
@@ -127,7 +127,7 @@ thousand always means something.
 
 - [SANS FOR508 memory forensics cheat sheet](https://dfir.com.br/pdf/memory-forensics-cheat-sheet.pdf)
 - [SANS six-part methodology, in *Digital Forensics and Incident Response*](https://www.oreilly.com/library/view/digital-forensics-and/9781787288683/c18a3aad-ef94-49fe-abc8-0b48d790cbe7.xhtml)
-- [Volatility 3 cheat sheet — Ashley Pearson](https://blog.onfvp.com/post/volatility-cheatsheet/)
+- [Volatility 3 cheat sheet by Ashley Pearson](https://blog.onfvp.com/post/volatility-cheatsheet/)
 - [Memory forensics with Volatility 3: what attackers leave behind](https://hivesecurity.gitlab.io/blog/memory-forensics-volatility-attack-detect/)
 - [Volatility 3 documentation](https://volatility3.readthedocs.io/en/latest/)
 - Plugin inventory and dependency gating measured directly against

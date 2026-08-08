@@ -18,7 +18,7 @@ export function elapsed(ms: number): string {
   return `${(ms / 1000).toFixed(2)} s`;
 }
 
-/** Time portion only — the date is already on the image bar. */
+/** Time portion only. The date is already on the image bar. */
 export const clock = (iso: string): string => iso.slice(11);
 
 /** Decodes the UTF-16LE base64 that PowerShell's -enc flag takes. */

@@ -60,7 +60,7 @@ export function PluginNav({
                   className={`nav-item${activeId === p.id ? " nav-item-active" : ""}`}
                   onClick={() => onRun(p)}
                   disabled={blocked}
-                  title={blocked ? `${p.unavailable?.reason} — module "${p.unavailable?.missingModule}" not importable` : p.summary}
+                  title={blocked ? `${p.unavailable?.reason}. Module "${p.unavailable?.missingModule}" not importable` : p.summary}
                 >
                   <span className="nav-name">{p.name}</span>
                   <span className="nav-meta">

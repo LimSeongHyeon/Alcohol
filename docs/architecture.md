@@ -8,7 +8,7 @@ throwing that context away.
 │  Tauri shell (Rust)                         │
 │  window, file dialogs, sidecar supervision  │
 │  ┌───────────────────────────────────────┐  │
-│  │  WebView — React + TypeScript         │  │
+│  │  WebView - React + TypeScript         │  │
 │  │  tables, tree, inspector, ribbon      │  │
 │  └───────────────────────────────────────┘  │
 └──────────────────┬──────────────────────────┘
@@ -21,15 +21,15 @@ throwing that context away.
 ┌──────────────────▼──────────────────────────┐
 │  Python daemon                              │
 │  supervisor process                         │
-│    ├── worker 1 — Context for image A       │
-│    ├── worker 2 — Context for image A       │
-│    └── worker 3 — Context for image B       │
+│    ├── worker 1 - Context for image A       │
+│    ├── worker 2 - Context for image A       │
+│    └── worker 3 - Context for image B       │
 └─────────────────────────────────────────────┘
 ```
 
 ## Why a daemon and not `vol.py`
 
-The obvious design — shell out to `vol.py` per plugin and parse the output — is
+The obvious design, shelling out to `vol.py` per plugin and parsing the output, is
 the one the licence explicitly calls a wrapper and the one that performs worst.
 
 Framework startup measured on the development machine, 197 plugins, no image
@@ -62,7 +62,7 @@ that image.
 **Not inside a plugin.** Volatility's own parallelism is off by default
 (`constants.PARALLELISM = Parallelism.Off`) and only covers the body of
 `TranslationLayerInterface.scan()`, and only for scanners that set
-`thread_safe = True` — the interface default is `False`. Result post-processing
+`thread_safe = True`, and the interface default is `False`. Result post-processing
 and scan-address generation are serial. The foundation's documentation states
 that scanners are usually not the bottleneck and that parallelism offers no
 significant gain.
@@ -89,7 +89,7 @@ arrive; it does not materialise the full result before replying.
 {"t":"job.done","job":"j17","rows":48213,"elapsed_ms":31402}
 ```
 
-Rows are batched — one message per row would spend more time in JSON than in
+Rows are batched: one message per row would spend more time in JSON than in
 analysis. The broker applies backpressure so a fast plugin cannot outrun the
 renderer, and `job.cancel` unwinds the generator.
 
@@ -111,15 +111,15 @@ counts by installed dependency:
 
 `pefile`, `yara-python` and `pycryptodome` are pinned as required, not optional.
 Even so the daemon reports the failure list on every startup, because a broken
-install must surface as a disabled plugin with a reason attached — never as a
+install must surface as a disabled plugin with a reason attached, never as a
 plugin that quietly does not exist. See
 [analysis-workflows.md](analysis-workflows.md) for why this is a correctness
 issue and not a polish issue.
 
 ## Opening an image
 
-Not uploading one. An image is evidence — eight gigabytes that must not be
-copied, moved or altered — so the tool records a path and a SHA-256 and reads in
+Not uploading one. An image is evidence: eight gigabytes that must not be
+copied, moved or altered. So the tool records a path and a SHA-256 and reads in
 place.
 
 This is the one place where the browser and the shell genuinely diverge. A

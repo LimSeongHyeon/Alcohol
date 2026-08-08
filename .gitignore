@@ -1,5 +1,5 @@
 # ==============================================================================
-# Forensic evidence — NEVER commit
+# Forensic evidence. NEVER commit.
 # ==============================================================================
 # Memory images and captures contain live secrets, credentials, private keys and
 # personal data from whoever's machine they came from. A public repository is the
@@ -156,7 +156,7 @@ tauri-private.key
 tauri-private.key.pub
 
 # ==============================================================================
-# Claude Code — commit shared config, ignore local overrides
+# Claude Code. Commit shared config, ignore local overrides.
 # ==============================================================================
 .claude/settings.local.json
 .claude/history/

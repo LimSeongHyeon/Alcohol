@@ -3,7 +3,7 @@ import type { RecentCase } from "../components/OpenImage";
 /**
  * Stand-in for the recent-case index the shell keeps on disk.
  *
- * A case is an .alcohol archive — see docs/case-file.md. It holds plugin
+ * A case is an .alcohol archive. See docs/case-file.md. It holds plugin
  * results, highlights and notes, keyed to an image by SHA-256. It never holds
  * the image.
  */
