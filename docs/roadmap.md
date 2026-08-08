@@ -24,6 +24,11 @@ being read for an afternoon. The `.alcohol` container is specified in
 
 ## M2: Daemon and first real result
 
+Planned in detail in [implementation-plan.md](implementation-plan.md), which
+breaks this milestone into M2.0 through M2.5, assigns the work to four parallel
+agents behind a frozen protocol, and sets the test strategy. Read that document
+rather than this section before starting.
+
 The point at which the tool does something true.
 
 - Python daemon: supervisor, one worker, one `Context` per image
