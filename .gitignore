@@ -114,6 +114,12 @@ build/
 !.yarn/versions
 .pnp.*
 
+# Playwright captures and traces. Visual-regression baselines, when we adopt
+# them, go in tests/__screenshots__ and are meant to be committed.
+.playwright/
+playwright-report/
+test-results/
+
 # ==============================================================================
 # Rust / Tauri
 # ==============================================================================

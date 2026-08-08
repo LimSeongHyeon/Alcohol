@@ -69,7 +69,7 @@
   /* ---- Structure */
   --row-h: 24px;        /* table row. tuned so ~40 rows fit a laptop viewport */
   --bar-h: 44px;        /* image bar */
-  --ribbon-h: 46px;
+  --ribbon-h: 38px;
   --nav-w: 232px;
   /* The table is the product, so the inspector yields to it on short screens.
    * At 720p this leaves the table ~14 rows; at 1080p, ~26. */

@@ -1,70 +1,73 @@
 import { useMemo } from "react";
 import { hex } from "../format";
+import type { Verdict } from "../types";
 
-const BUCKETS = 240;
 const TICKS = 9;
 
 export interface RibbonMark {
   offset: number;
-  kind: "alert" | "selected";
+  verdict: Verdict;
+  label: string;
 }
 
 /**
- * The signature element.
+ * The signature element: a minimap of the open result set laid over the
+ * physical address space.
  *
- * An offset in a forensics tool is not an abstract number — it is a place. This
- * strip is the whole physical address space of the image, left to right, with a
- * density plot of every object the session has recovered so far. When a row is
- * selected its offset is marked here, so "where in the image did this come
- * from" is answered without the analyst doing hex arithmetic in their head.
+ * An offset in a forensics tool is not an abstract number, it is a place. Every
+ * mark here is a row in the active table, positioned where it actually lives in
+ * the image, so "where did this come from" is answered without hex arithmetic.
  *
- * Density is on a log scale: pool allocations cluster hard, and a linear scale
- * would render everything outside the clusters as nothing at all.
+ * An earlier version binned all known offsets into a density histogram. It
+ * looked like a barcode and said nothing — log scaling flattened every bucket
+ * to the same height, and the marks that mattered were lost in the grey. One
+ * mark per row is less ink and far more information: the unlinked process
+ * sitting alone at 0x11f000000, far from every other allocation, is visible
+ * immediately.
  */
 export function AddressRibbon({
   maxAddress,
-  offsets,
   marks,
+  selected,
+  caption,
 }: {
   maxAddress: number;
-  offsets: number[];
   marks: RibbonMark[];
+  selected: number | null;
+  caption: string;
 }) {
-  const buckets = useMemo(() => {
-    const counts = new Array<number>(BUCKETS).fill(0);
-    for (const off of offsets) {
-      const i = Math.min(BUCKETS - 1, Math.floor((off / maxAddress) * BUCKETS));
-      if (i >= 0) counts[i] = (counts[i] ?? 0) + 1;
-    }
-    const peak = Math.max(...counts, 1);
-    return counts.map((c) => (c === 0 ? 0 : Math.log1p(c) / Math.log1p(peak)));
-  }, [offsets, maxAddress]);
-
   const ticks = useMemo(
     () => Array.from({ length: TICKS }, (_, i) => Math.round((maxAddress * i) / (TICKS - 1))),
     [maxAddress],
   );
 
+  // Alerts paint last so they are never covered by a neighbouring plain mark.
+  const ordered = useMemo(
+    () => [...marks].sort((a, b) => Number(a.verdict === "alert") - Number(b.verdict === "alert")),
+    [marks],
+  );
+
   return (
-    <div className="ribbon" role="img" aria-label="Physical address space density">
-      <div className="ribbon-plot">
-        {buckets.map((h, i) => (
+    <div className="ribbon">
+      <div className="ribbon-track" role="img" aria-label={`${marks.length} results across the physical address space`}>
+        <div className="ribbon-baseline" />
+        {ordered.map((m, i) => (
           <div
-            key={i}
-            className="ribbon-bucket"
-            style={{ height: h === 0 ? 1 : `${Math.max(8, h * 100)}%` }}
+            key={`${m.offset}-${i}`}
+            className={`ribbon-mark ribbon-mark-${m.verdict}`}
+            style={{ left: `${(m.offset / maxAddress) * 100}%` }}
+            title={`${m.label} · ${hex(m.offset)}`}
           />
         ))}
-
-        <div className="ribbon-overlay">
-          {marks.map((m, i) => (
-            <div
-              key={`${m.kind}-${m.offset}-${i}`}
-              className={m.kind === "selected" ? "ribbon-mark ribbon-mark-selected" : "ribbon-mark"}
-              style={{ left: `${(m.offset / maxAddress) * 100}%` }}
-            />
-          ))}
-        </div>
+        {/* No offset label here — it would collide with the marks, and the same
+            value is already on the selected row and in the inspector header. */}
+        {selected !== null && (
+          <div
+            className="ribbon-cursor"
+            style={{ left: `${(selected / maxAddress) * 100}%` }}
+            title={hex(selected)}
+          />
+        )}
       </div>
 
       <div className="ribbon-scale">
@@ -73,9 +76,7 @@ export function AddressRibbon({
         ))}
       </div>
 
-      <div className="ribbon-legend">
-        <span>Address space</span>
-      </div>
+      <span className="ribbon-caption">{caption}</span>
     </div>
   );
 }

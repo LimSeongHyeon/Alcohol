@@ -53,6 +53,15 @@ export function DataTable<T>({
     anchor.current = selectedIndex;
   }, [selectedIndex]);
 
+  // A selection that exists but sits below the fold reads as no selection at
+  // all. Reveal it once, when the table first has somewhere to scroll.
+  const revealed = useRef(false);
+  useEffect(() => {
+    if (revealed.current || !scrollEl || selectedIndex < 0) return;
+    revealed.current = true;
+    virtualizer.scrollToIndex(selectedIndex, { align: "center" });
+  }, [scrollEl, selectedIndex, virtualizer]);
+
   /** Analysts drive dense tables from the keyboard. Arrow keys move the
    *  selection and keep it in view; the mouse is the fallback, not the path. */
   function onKeyDown(e: KeyboardEvent) {

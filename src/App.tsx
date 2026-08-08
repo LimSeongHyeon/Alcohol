@@ -83,24 +83,6 @@ export default function App() {
     [selectedPid],
   );
 
-  const ribbonOffsets = useMemo(
-    () => [
-      ...processes.map((p) => p.offset),
-      ...connections.map((c) => c.offset),
-      ...allHandles.filter((_, i) => i % 3 === 0).map((h) => h.offset),
-    ],
-    [],
-  );
-
-  const ribbonMarks = useMemo<RibbonMark[]>(() => {
-    const marks: RibbonMark[] = [
-      ...processes.filter((p) => verdictOf(p.findings) === "alert").map((p) => ({ offset: p.offset, kind: "alert" as const })),
-      ...connections.filter((c) => netVerdict(c) === "alert").map((c) => ({ offset: c.offset, kind: "alert" as const })),
-    ];
-    if (selectedOffset !== null) marks.push({ offset: selectedOffset, kind: "selected" });
-    return marks;
-  }, [selectedOffset]);
-
   const q = filter.trim().toLowerCase();
 
   const procRows = useMemo(() => {
@@ -130,13 +112,35 @@ export default function App() {
     return live.filter((r) => `${r.pid} ${r.process} ${r.type} ${r.name}`.toLowerCase().includes(q));
   }, [streamed, q]);
 
+  // The ribbon mirrors whatever table is open, so it is a minimap of the result
+  // set in front of you rather than a permanent decoration.
+  const ribbonMarks = useMemo<RibbonMark[]>(() => {
+    switch (activeTab) {
+      case "pstree":
+        return procRows.map((r) => ({ offset: r.offset, verdict: verdictOf(r.findings), label: `${r.name} (${r.pid})` }));
+      case "netscan":
+        return netRows.map((r) => ({ offset: r.offset, verdict: netVerdict(r), label: `${r.owner} → ${r.foreignAddr}` }));
+      case "handles":
+        return handleRows
+          .filter((_, i) => i % 24 === 0)
+          .map((r) => ({ offset: r.offset, verdict: "clean" as const, label: `${r.type} (${r.process})` }));
+      default:
+        return [];
+    }
+  }, [activeTab, procRows, netRows, handleRows]);
+
+  const ribbonCaption =
+    activeTab === "malfind"
+      ? "malfind reports virtual addresses — not plottable here"
+      : `${activeTab} · ${count(ribbonMarks.length)} marks`;
+
   const procColumns: Column<ProcessRow>[] = [
     { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono td-strong">{r.pid}</span> },
     { key: "ppid", header: "PPID", width: 56, align: "right", render: (r) => <span className="td-mono">{r.ppid}</span> },
     {
       key: "name",
       header: "Image",
-      width: 0,
+      width: 292,
       render: (r) => (
         <>
           <span className="tree-rail">{treeRail(r.depth)}</span>
@@ -146,12 +150,20 @@ export default function App() {
         </>
       ),
     },
+    // pstree does not carry the command line; the GUI joins it in, because
+    // "what was it launched with" is the next question in every case and the
+    // CLI makes you run a second plugin to answer it.
+    {
+      key: "cmdline",
+      header: "Command line",
+      width: 0,
+      render: (r) => <span className="td-mono td-dim">{r.cmdline ?? "—"}</span>,
+    },
     { key: "offset", header: "Offset(P)", width: 106, render: (r) => <span className="td-mono">{hex(r.offset)}</span> },
     { key: "threads", header: "Thr", width: 48, align: "right", render: (r) => <span className="td-mono">{r.threads}</span> },
     { key: "handles", header: "Hnd", width: 56, align: "right", render: (r) => <span className="td-mono">{r.handles ?? "—"}</span> },
     { key: "sess", header: "Sess", width: 48, align: "right", render: (r) => <span className="td-mono">{r.sessionId ?? "—"}</span> },
     { key: "start", header: "Started", width: 74, render: (r) => <span className="td-mono">{clock(r.createTime)}</span> },
-    { key: "exit", header: "Exited", width: 74, render: (r) => <span className="td-mono td-dim">{r.exitTime ? clock(r.exitTime) : "—"}</span> },
   ];
 
   const netColumns: Column<NetRow>[] = [
@@ -162,8 +174,13 @@ export default function App() {
     { key: "fport", header: "Port", width: 56, align: "right", render: (r) => <span className="td-mono">{r.foreignPort || "—"}</span> },
     { key: "state", header: "State", width: 106, render: (r) => <span className="td-mono">{r.state || "—"}</span> },
     { key: "pid", header: "PID", width: 56, align: "right", render: (r) => <span className="td-mono">{r.pid}</span> },
-    { key: "owner", header: "Owner", width: 0, render: (r) => r.owner },
+    { key: "owner", header: "Owner", width: 168, render: (r) => r.owner },
+    // netscan is a pool scan, so the offset is evidence — and it is what the
+    // ribbon plots. Leaving it out made the ribbon unexplainable.
+    { key: "offset", header: "Offset(P)", width: 116, render: (r) => <span className="td-mono td-dim">{hex(r.offset)}</span> },
     { key: "created", header: "Created", width: 74, render: (r) => <span className="td-mono td-dim">{r.created ? clock(r.created) : "—"}</span> },
+    // Trailing slack sits at the edge instead of tearing a hole mid-row.
+    { key: "pad", header: "", width: 0, render: () => null },
   ];
 
   const malColumns: Column<MalfindRow>[] = [
@@ -206,7 +223,12 @@ export default function App() {
       </div>
 
       <div className="app-ribbon">
-        <AddressRibbon maxAddress={image.maxAddress} offsets={ribbonOffsets} marks={ribbonMarks} />
+        <AddressRibbon
+          maxAddress={image.maxAddress}
+          marks={ribbonMarks}
+          selected={selectedOffset}
+          caption={ribbonCaption}
+        />
       </div>
 
       <div className="app-nav">

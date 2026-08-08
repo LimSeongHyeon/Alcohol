@@ -134,6 +134,24 @@ Constraints that shaped it:
 - **Achromatic chrome, chromatic verdicts.** Documented in
   `src/styles/tokens.css`. Selection, hover and focus are expressed in lightness
   alone.
+- **Every text tone clears WCAG AA.** The ramp comments in `tokens.css` record
+  the measured ratios. Analysts read this interface for hours.
+
+### Looking at it
+
+GUI quality is a stated goal, so someone has to actually look at the thing.
+`tests/workspace.spec.ts` drives Chromium through the workspace at 1440×900 and
+1280×720, writing captures to `.playwright/shots/` and asserting the behaviour
+that is easy to break without noticing: keyboard navigation lands on every
+press, unavailable plugins stay listed, the flagged filter leaves no unflagged
+rows, nothing overflows horizontally.
+
+```bash
+npm run shot
+```
+
+Captures are gitignored. When visual regression is worth adopting, baselines go
+in `tests/__screenshots__` and get committed.
 
 ## Not built yet
 
